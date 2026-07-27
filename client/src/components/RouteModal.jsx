@@ -257,14 +257,24 @@ export default function RouteModal({ op, cfg, onClose }) {
 }
 
 function EtaRow({ e }) {
-  const soon = e.mins !== null && e.mins <= 3;
-  const late = e.mins !== null && e.mins >= 15;
-  const timeText = e.mins === null ? '到站' : (e.mins <= 0 ? '即將到站' : `${e.mins} 分鐘`);
+  const mins = e.mins;
+  const urgency = mins === null ? 'arriving'
+    : mins <= 0 ? 'arriving'
+    : mins <= 3 ? 'soon'
+    : mins >= 15 ? 'late' : 'normal';
+  const timeText = mins === null ? '到站' : (mins <= 0 ? '即將到站' : `${mins} 分`);
+  const isMtr = !!e.dir && (e.dir === 'UP' || e.dir === 'DOWN');
   return (
-    <div className={`eta-row ${soon ? 'eta-row--soon' : ''} ${late ? 'eta-row--late' : ''}`}>
-      <div>
-        <div className="eta-row__dest">往 {e.dest || ''}</div>
-        {e.remark && <div className="eta-row__remark">{e.remark}</div>}
+    <div className={`eta-row eta-row--${urgency}`}>
+      <div className="eta-row__main">
+        <div className="eta-row__top">
+          {e.route && <span className="eta-row__route" style={e.color ? { background: e.color } : undefined}>{e.route}</span>}
+          <span className="eta-row__dest">往 {e.dest || ''}</span>
+        </div>
+        <div className="eta-row__sub">
+          {!isMtr && e.dir && <span className="eta-row__dir">{e.dir}</span>}
+          {e.remark && <span className="eta-row__plat">{e.remark}</span>}
+        </div>
       </div>
       <div className="eta-row__time">
         <div className="eta-row__mins">{timeText}</div>

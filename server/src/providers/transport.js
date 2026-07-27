@@ -88,12 +88,15 @@ export async function getEta(op, route, dir, stopId, mtrMode, line) {
       if (!d) return { source: 'error', etas: [] };
       const rows = [];
       for (const [dirKey, label] of [['UP', '上行'], ['DOWN', '下行']]) {
+        const lineColor = MTR_LINES.find(l => l.code === line)?.color || '';
         for (const t of (d[dirKey] || [])) {
           rows.push({
             route: label,
+            dir: dirKey,
             dest: MTR_STATION_NAMES[t.dest] || t.dest,
-            mins: t.ttnt !== undefined ? Math.max(0, parseInt(t.ttnt, 10)) : parseEta(t.time),
-            remark: t.plat ? `${t.plat} 號月台` : ''
+            mins: t.ttnt !== undefined ? Math.max(0, Math.round(parseInt(t.ttnt, 10) / 60)) : parseEta(t.time),
+            remark: t.plat ? `${t.plat} 號月台` : '',
+            color: lineColor
           });
         }
       }
@@ -116,7 +119,8 @@ export async function getEta(op, route, dir, stopId, mtrMode, line) {
         route: rt.route_no,
         dest: rt.dest_ch || rt.dest_en,
         mins: parseMins(rt.time_ch || rt.time_en),
-        remark: rt.special ? '特別班次' : ''
+        remark: rt.special ? '特別班次' : '',
+        dir: ''
       }));
       return { source: 'live', etas };
     } catch (err) {
@@ -129,7 +133,7 @@ export async function getEta(op, route, dir, stopId, mtrMode, line) {
     if (op === 'citybus') {
       const res = await j(`${CONFIG.transport.citybus.baseUrl}/eta/${CONFIG.transport.citybus.company}/${encodeURIComponent(stopId)}/${encodeURIComponent(route)}/`);
       const etas = (res?.data || []).filter(d => d.eta).map(d => ({
-        route: d.route, dest: d.dest_tc || d.dest_en, mins: parseEta(d.eta), remark: d.rmk_tc || ''
+        route: d.route, dest: d.dest_tc || d.dest_en, mins: parseEta(d.eta), remark: d.rmk_tc || '', dir: (d.dir === 'I' ? '回程' : '去程')
       }));
       return { source: 'live', etas };
     }
@@ -140,7 +144,7 @@ export async function getEta(op, route, dir, stopId, mtrMode, line) {
       const etas = (res?.data || [])
         .filter(d => d.eta && d.dir === wantDir)
         .map(d => ({
-          route: d.route, dest: d.dest_tc || d.dest_en, mins: parseEta(d.eta), remark: d.rmk_tc || ''
+          route: d.route, dest: d.dest_tc || d.dest_en, mins: parseEta(d.eta), remark: d.rmk_tc || '', dir: (d.dir === 'I' ? '回程' : '去程')
         }));
       return { source: 'live', etas };
     }
@@ -170,8 +174,8 @@ function demoStops(route) {
 function demoEta(route) {
   const base = Math.floor(Math.random() * 8) + 1;
   return [
-    { route, dest: '終點站', mins: base, remark: '' },
-    { route, dest: '終點站', mins: base + 8, remark: '' },
-    { route, dest: '終點站', mins: base + 17, remark: '班次較疏' }
+    { route, dest: '終點站', mins: base, remark: '', dir: '' },
+    { route, dest: '終點站', mins: base + 8, remark: '', dir: '' },
+    { route, dest: '終點站', mins: base + 17, remark: '班次較疏', dir: '' }
   ];
 }

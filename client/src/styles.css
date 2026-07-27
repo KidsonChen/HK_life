@@ -182,14 +182,23 @@ button.traffic-item--ok { border-left-color: var(--status-ok); }
 .eta-refresh::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); animation: pulse 1.4s var(--ease) infinite; }
 @keyframes pulse { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
 .eta-list { display: grid; gap: var(--space-2); }
-.eta-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--color-background); border-radius: var(--radius); border-left: 4px solid var(--status-ok); }
-.eta-row--soon { border-left-color: var(--status-warn); }
+.eta-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); background: var(--color-background); border-radius: var(--radius); border-left: 4px solid var(--status-ok); min-height: 56px; }
+.eta-row--soon { border-left-color: var(--status-warn); background: rgba(234,88,12,.06); }
+.eta-row--arriving { border-left-color: var(--color-accent); background: rgba(234,88,12,.10); }
 .eta-row--late { border-left-color: var(--status-bad); }
-.eta-row__dest { font-weight: 600; }
-.eta-row__remark { font-size: .78rem; color: var(--color-muted); }
-.eta-row__time { text-align: right; }
-.eta-row__mins { font-size: 1.1rem; font-weight: 700; color: var(--color-primary); }
-.eta-row__label { font-size: .75rem; color: var(--color-muted); }
+.eta-row__main { flex: 1; min-width: 0; }
+.eta-row__top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.eta-row__route { flex: none; min-width: 40px; height: 28px; padding: 0 8px; display: inline-grid; place-items: center; background: var(--line-color, var(--color-primary)); color: #fff; font-weight: 700; border-radius: 8px; font-size: .9rem; }
+.eta-row__dest { font-weight: 600; font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eta-row__sub { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.eta-row__dir { font-size: .78rem; font-weight: 600; color: var(--color-muted); }
+.eta-row__plat { font-size: .76rem; font-weight: 600; color: var(--color-secondary); background: rgba(8,145,178,.12); padding: 1px 8px; border-radius: 999px; }
+.eta-row__time { text-align: right; flex: none; }
+.eta-row__mins { font-size: 1.3rem; font-weight: 700; color: var(--color-primary); line-height: 1.1; }
+.eta-row--arriving .eta-row__mins { color: var(--color-accent); }
+.eta-row--soon .eta-row__mins { color: var(--status-warn); }
+.eta-row--late .eta-row__mins { color: var(--status-bad); }
+.eta-row__label { font-size: .72rem; color: var(--color-muted); }
 
 /* ===== 氣溫走勢卡片 ===== */
 .card--temp { grid-column: span 1; }
