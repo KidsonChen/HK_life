@@ -69,7 +69,14 @@ function demo() {
     items: [
       { id: 'd1', road: '紅磡海底隧道', status: '交通暢順', full: '紅磡海底隧道交通暢順。', category: 'road', type: 'incident', time: '' },
       { id: 'd2', road: '東區海底隧道', status: '交通暢順', full: '東區海底隧道交通暢順。', category: 'road', type: 'incident', time: '' },
-      { id: 'd3', road: '西區海底隧道', status: '交通暢順', full: '西區海底隧道交通暢順。', category: 'road', type: 'incident', time: '' }
+      { id: 'd3', road: '西區海底隧道', status: '交通暢順', full: '西區海底隧道交通暢順。', category: 'road', type: 'incident', time: '' },
+      { id: 'd4', road: '獅子山隧道', status: '交通暢順', full: '獅子山隧道交通暢順。', category: 'road', type: 'incident', time: '' },
+      { id: 'd5', road: '青嶼幹線', status: '封閉維修', full: '青嶼幹線封閉維修，請使用其他道路。', category: 'road', type: 'incident', time: '' },
+      { id: 'd6', road: '屯門公路', status: '車多緩慢', full: '屯門公路往屯門方向車多緩慢。', category: 'road', type: 'incident', time: '' },
+      { id: 'd7', road: '吐露港公路', status: '交通意外', full: '吐露港公路近大埔有交通意外，部份行車線封閉。', category: 'road', type: 'incident', time: '' },
+      { id: 'd8', road: '將軍澳隧道', status: '車多擠塞', full: '將軍澳隧道往將軍澳方向車多擠塞。', category: 'road', type: 'incident', time: '' },
+      { id: 'd9', road: '大老山隧道', status: '交通暢順', full: '大老山隧道交通暢順。', category: 'road', type: 'incident', time: '' },
+      { id: 'd10', road: '香港仔隧道', status: '車多緩慢', full: '香港仔隧道往香港仔方向車多緩慢。', category: 'road', type: 'incident', time: '' }
     ]
   };
 }

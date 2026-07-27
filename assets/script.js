@@ -156,7 +156,29 @@ function updateForecast(forecast) {
         return;
     }
 
-    el.forecastList.innerHTML = forecast.slice(0, 7).map(item => {
+    // 計算溫度範圍以繪製走勢圖
+    const temps = forecast.slice(0, 7).map(item => ({
+        lo: Math.round(item.temp_min ?? item.main?.temp_min ?? 0),
+        hi: Math.round(item.temp_max ?? item.main?.temp_max ?? 0)
+    }));
+    const allTemps = temps.flatMap(t => [t.lo, t.hi]);
+    const tempMin = Math.min(...allTemps);
+    const tempMax = Math.max(...allTemps);
+    const tempRange = Math.max(tempMax - tempMin, 5); // 最小範圍 5 度
+
+    // 將溫度映射到 0-100% 區間（反轉：高溫在上）
+    const normHi = temps.map(t => 100 - ((t.hi - tempMin) / tempRange) * 80 - 10);
+    const normLo = temps.map(t => 100 - ((t.lo - tempMin) / tempRange) * 80 - 10);
+
+    // 產生 SVG 折線 path
+    const gap = 100 / 6; // 7 點 6 段
+    const hiPath = normHi.map((y, i) => `${i === 0 ? 'M' : 'L'}${i * gap},${y}`).join(' ');
+    const loPath = normLo.map((y, i) => `${i === 0 ? 'M' : 'L'}${i * gap},${y}`).join(' ');
+    // 填色區域（高低溫之間）
+    const fillPoints = normHi.map((y, i) => `${i * gap},${y}`).join(' ') + ' ' +
+        normLo.map((y, i) => `${(6 - i) * gap},${y}`).join(' ');
+
+    el.forecastList.innerHTML = forecast.slice(0, 7).map((item, i) => {
         const d = new Date(item.dt * 1000);
         const date = d.toLocaleDateString('zh-HK', { weekday: 'short', day: 'numeric', month: 'short' });
         const lo = Math.round(item.temp_min ?? item.main?.temp_min ?? 0);
@@ -167,7 +189,31 @@ function updateForecast(forecast) {
             <div class="forecast-day__icon">${weatherSVG(icon)}</div>
             <div class="forecast-day__temp">${hi}° <span>${lo}°</span></div>
         </div>`;
-    }).join('');
+    }).join('') + `
+        <div class="forecast-chart">
+            <div class="forecast-chart__title">氣溫走勢</div>
+            <div class="forecast-chart__svg-wrapper">
+                <svg viewBox="0 0 100 100" class="forecast-chart__svg" aria-label="未來7天高低氣溫走勢圖">
+                    <!-- 參考線 -->
+                    ${[0,1,2,3,4].map(i => `<line x1="0" y1="${20 + i * 16}" x2="100" y2="${20 + i * 16}" stroke="var(--color-border)" stroke-width="0.3"/>`).join('')}
+                    <!-- 低溫區域填色 -->
+                    <polygon points="${fillPoints}" fill="var(--color-primary)" opacity="0.08" />
+                    <!-- 高溫線 -->
+                    <path d="${hiPath}" fill="none" stroke="var(--status-bad)" stroke-width="1.2" stroke-linejoin="round" />
+                    <!-- 低溫線 -->
+                    <path d="${loPath}" fill="none" stroke="var(--color-primary)" stroke-width="1.2" stroke-linejoin="round" />
+                    <!-- 溫度標籤（顯示首尾） -->
+                    <text x="0" y="${normHi[0] - 4}" font-size="4" fill="var(--status-bad)" font-weight="600">${temps[0].hi}°</text>
+                    <text x="100" y="${normHi[6] - 4}" font-size="4" fill="var(--status-bad)" font-weight="600" text-anchor="end">${temps[6].hi}°</text>
+                    <text x="0" y="${normLo[0] + 10}" font-size="4" fill="var(--color-primary)" font-weight="600">${temps[0].lo}°</text>
+                    <text x="100" y="${normLo[6] + 10}" font-size="4" fill="var(--color-primary)" font-weight="600" text-anchor="end">${temps[6].lo}°</text>
+                </svg>
+            </div>
+            <div class="forecast-chart__labels">
+                <span class="forecast-chart__label forecast-chart__label--hi">● 高溫</span>
+                <span class="forecast-chart__label forecast-chart__label--lo">● 低溫</span>
+            </div>
+        </div>`;
 }
 
 // ===================================================================
