@@ -190,3 +190,27 @@ button.traffic-item--ok { border-left-color: var(--status-ok); }
 .eta-row__time { text-align: right; }
 .eta-row__mins { font-size: 1.1rem; font-weight: 700; color: var(--color-primary); }
 .eta-row__label { font-size: .75rem; color: var(--color-muted); }
+
+/* ===== 氣溫走勢卡片 ===== */
+.card--temp { grid-column: span 1; }
+.temp-summary { display: flex; gap: var(--space-3); margin-bottom: var(--space-3); }
+.temp-summary__item { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.temp-summary__label { font-size: .75rem; color: var(--color-muted); }
+.temp-summary__val { font-size: 1.4rem; font-weight: 700; }
+.temp-summary__val--max { color: #E6553A; }
+.temp-summary__val--min { color: #5BA152; }
+.spark-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.spark-row { display: flex; align-items: center; gap: var(--space-2); }
+.spark-row__label { font-size: .72rem; font-weight: 600; width: 32px; flex-shrink: 0; }
+.spark-row__label--max { color: #E6553A; }
+.spark-row__label--mean { color: #2E8BC0; }
+.spark-row__label--min { color: #5BA152; }
+.spark { width: 100%; height: 56px; display: block; }
+.spark__min, .spark__max { font-size: 9px; fill: var(--color-muted); font-weight: 600; }
+
+/* ===== 天氣警告 / 分區雨量 ===== */
+.weather-warning { margin-top: var(--space-2); display: flex; flex-direction: column; gap: 6px; }
+.warning-badge { background: rgba(230,85,58,.12); color: #E6553A; border-left: 3px solid #E6553A; padding: 6px 10px; border-radius: var(--radius-sm); font-size: .85rem; font-weight: 600; }
+.rain-districts { margin-top: var(--space-2); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.rain-districts__label { font-size: .75rem; color: var(--color-muted); }
+.chip--rain { background: rgba(46,139,192,.12); color: #2E8BC0; border: 0; }

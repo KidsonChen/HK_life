@@ -5,6 +5,7 @@ import WeatherCard from './components/WeatherCard.jsx';
 import TrafficCard from './components/TrafficCard.jsx';
 import TransportCards from './components/TransportCards.jsx';
 import RouteModal from './components/RouteModal.jsx';
+import TempHistoryCard from './components/TempHistoryCard.jsx';
 
 const OPERATORS = {
   citybus: { label: '城巴', color: 'var(--line-citybus)', type: 'bus' },
@@ -18,6 +19,8 @@ export default function App() {
   const [traffic, setTraffic] = useState(null);
   const [trafficErr, setTrafficErr] = useState(false);
   const [transport, setTransport] = useState({ citybus: null, kmb: null, mtr: null });
+  const [tempHistory, setTempHistory] = useState(null);
+  const [tempErr, setTempErr] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [modalOp, setModalOp] = useState(null); // 當前開啟的運輸商
@@ -47,11 +50,16 @@ export default function App() {
     }));
   }, []);
 
+  const loadTempHistory = useCallback(async () => {
+    try { const d = await api.tempHistory(); setTempHistory(d); setTempErr(false); }
+    catch { setTempErr(true); }
+  }, []);
+
   const refreshAll = useCallback(() => {
     setLoading(true);
-    Promise.allSettled([loadWeather(), loadTraffic(), loadTransport()])
+    Promise.allSettled([loadWeather(), loadTraffic(), loadTransport(), loadTempHistory()])
       .finally(() => setTimeout(() => setLoading(false), 600));
-  }, [loadWeather, loadTraffic, loadTransport]);
+  }, [loadWeather, loadTraffic, loadTransport, loadTempHistory]);
 
   useEffect(() => { refreshAll(); }, [refreshAll]);
 
@@ -82,6 +90,7 @@ export default function App() {
 
       <main id="main" className="bento">
         <WeatherCard data={weather} error={weatherErr} loading={!weather && !weatherErr} />
+        <TempHistoryCard data={tempHistory} error={tempErr} loading={!tempHistory && !tempErr} />
         <TrafficCard data={traffic} error={trafficErr} loading={!traffic && !trafficErr} />
         <TransportCards
           data={transport}

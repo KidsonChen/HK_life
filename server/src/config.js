@@ -5,7 +5,12 @@ export const CONFIG = {
   port: process.env.PORT || 3001,
   weather: {
     rhrread: 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc',
-    fnd: 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc'
+    fnd: 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc',
+    warnsum: 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc',
+    warningInfo: 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warningInfo&lang=tc',
+    swt: 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=swt&lang=tc',
+    // 每日最高/平均/最低氣溫（CLMMAXT / CLMINT / CLMTEMP）
+    clm: 'https://data.weather.gov.hk/weatherAPI/opendata/opendata.php'
   },
   traffic: {
     datastore: 'https://data.gov.hk/api/action/datastore_search',

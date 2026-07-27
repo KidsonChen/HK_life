@@ -38,7 +38,15 @@ export default function WeatherCard({ data, error, loading }) {
           </div>
           {c.warnings?.length > 0 && (
             <div className="weather-warning">
-              {c.warnings.map((w, i) => <div key={i} className="warning-badge">⚠️ {w}</div>)}
+              {c.warnings.map((w, i) => <div key={i} className="warning-badge">{w}</div>)}
+            </div>
+          )}
+          {data.rainDistricts?.length > 0 && (
+            <div className="rain-districts">
+              <span className="rain-districts__label">分區雨量</span>
+              {data.rainDistricts.slice(0, 4).map((r, i) => (
+                <span key={i} className="chip chip--rain">{r.place} {r.max}mm</span>
+              ))}
             </div>
           )}
         </div>

@@ -20,5 +20,6 @@ export const api = {
     return getJson(`${BASE}/transport/${op}/eta?${q.toString()}`);
   },
   mtrLines: () => getJson(`${BASE}/mtr/lines`),
-  lrtStations: () => getJson(`${BASE}/mtr/lrt-stations`)
+  lrtStations: () => getJson(`${BASE}/mtr/lrt-stations`),
+  tempHistory: () => getJson(`${BASE}/weather/temphistory`)
 };

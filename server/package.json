@@ -9,7 +9,6 @@
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
-    "express": "^4.21.2",
-    "hk-life": "file:.."
+    "express": "^4.21.2"
   }
 }

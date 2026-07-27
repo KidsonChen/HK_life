@@ -1,6 +1,6 @@
 import express from 'express';
 import { CONFIG } from './config.js';
-import { getWeather } from './providers/hko.js';
+import { getWeather, getTempHistory } from './providers/hko.js';
 import { getTraffic } from './providers/traffic.js';
 import {
   getRoutes, getStops, getEta, getMtrLines, getLrtStations
@@ -32,6 +32,12 @@ const fail = (res, err, fallback) => {
 app.get('/api/weather', async (req, res) => {
   try { ok(res, await getWeather()); }
   catch (e) { fail(res, e, CONFIG.demo ? null : undefined); }
+});
+
+// 天氣：每日氣溫走勢（最高/平均/最低）
+app.get('/api/weather/temphistory', async (req, res) => {
+  try { ok(res, await getTempHistory(30)); }
+  catch (e) { fail(res, e); }
 });
 
 // 交通
@@ -85,6 +91,12 @@ if (existsSync(clientDist)) {
   app.use(express.static(clientDist));
 }
 
-app.listen(CONFIG.port, () => {
-  console.log(`[hk-life] API server 啟動： http://localhost:${CONFIG.port}  (demo=${CONFIG.demo})`);
-});
+// 本地開發才啟動監聽；Vercel Serverless Function 環境由 api/index.js 匯入 app，不在此 listen
+if (!process.env.VERCEL) {
+  app.listen(CONFIG.port, () => {
+    console.log(`[hk-life] API server 啟動： http://localhost:${CONFIG.port}  (demo=${CONFIG.demo})`);
+  });
+}
+
+// 匯出 app 供 Vercel Serverless Function（api/index.js）直接使用
+export { app };
