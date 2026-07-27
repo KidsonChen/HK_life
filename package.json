@@ -1,0 +1,18 @@
+{
+  "name": "hk-life",
+  "version": "1.0.0",
+  "private": true,
+  "description": "香港生活資訊 — React + Node.js (天氣 / 交通 / 即時運輸)",
+  "type": "module",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "server": "npm --prefix server run dev",
+    "client": "npm --prefix client run dev",
+    "dev": "concurrently -n server,client -c blue,green \"npm:server\" \"npm:client\"",
+    "build": "npm --prefix client install && npm --prefix client run build",
+    "start": "npm --prefix server start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
