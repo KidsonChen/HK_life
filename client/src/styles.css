@@ -223,3 +223,36 @@ button.traffic-item--ok { border-left-color: var(--status-ok); }
 .rain-districts { margin-top: var(--space-2); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .rain-districts__label { font-size: .75rem; color: var(--color-muted); }
 .chip--rain { background: rgba(46,139,192,.12); color: #2E8BC0; border: 0; }
+
+/* ===== 收藏 / 熱門路線 ===== */
+.route-group { display: grid; gap: var(--space-2); }
+.route-group__title { font-size: .8rem; font-weight: 700; color: var(--color-muted); letter-spacing: .05em; margin-top: var(--space-2); }
+.route-card { display: flex; align-items: stretch; gap: 0; padding: 0; overflow: hidden; }
+.route-card__main { flex: 1; display: flex; align-items: center; gap: var(--space-3); min-width: 0; text-align: left; cursor: pointer; background: transparent; border: 0; padding: var(--space-3); font-family: inherit; color: var(--color-foreground); }
+.fav-btn { flex: none; width: 48px; display: grid; place-items: center; border: 0; border-left: 1px solid var(--color-border); background: transparent; color: var(--color-muted); cursor: pointer; transition: color .15s var(--ease), background .15s var(--ease); }
+.fav-btn:hover { background: var(--color-border); }
+.fav-btn.is-fav { color: #F59E0B; }
+.route-card--fav { border-color: rgba(245,158,11,.45); }
+.popular-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.popular-chip { min-height: 40px; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-background); color: var(--color-primary); font-family: inherit; font-size: .95rem; font-weight: 700; cursor: pointer; transition: background .15s var(--ease), border-color .15s var(--ease); }
+.popular-chip:hover { border-color: var(--color-primary); background: rgba(37,99,235,.08); }
+
+/* ===== 港鐵轉車建議 ===== */
+.stop-card--accent { border-left: 4px solid var(--color-accent); }
+.transfer-form { display: flex; align-items: end; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap: wrap; }
+.transfer-form__row { flex: 1; min-width: 140px; display: grid; gap: 4px; }
+.transfer-form__label { font-size: .78rem; font-weight: 600; color: var(--color-muted); }
+.transfer-form__select { width: 100%; min-height: 44px; font-family: inherit; font-size: .95rem; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-background); color: var(--color-foreground); cursor: pointer; }
+.transfer-form__select:focus-visible { border-color: var(--color-primary); }
+.transfer-form__swap { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-background); color: var(--color-primary); font-size: 1.1rem; cursor: pointer; transition: background .15s var(--ease); }
+.transfer-form__swap:hover { background: var(--color-border); }
+.transfer-plan { display: grid; gap: var(--space-3); }
+.transfer-plan__summary { display: flex; gap: var(--space-3); padding: var(--space-3); background: rgba(37,99,235,.08); border: 1px solid rgba(37,99,235,.25); border-radius: var(--radius); flex-wrap: wrap; }
+.transfer-plan__stat { font-size: .9rem; color: var(--color-muted); }
+.transfer-plan__stat strong { font-size: 1.15rem; color: var(--color-primary); margin-right: 2px; }
+.transfer-plan__segs { display: grid; gap: var(--space-2); }
+.transfer-seg { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: var(--color-background); border-radius: var(--radius); border-left: 4px solid var(--color-border); }
+.transfer-seg__badge { flex: none; font-size: .8rem; font-weight: 700; color: #fff; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
+.transfer-seg__info { min-width: 0; }
+.transfer-seg__route { font-weight: 600; }
+.transfer-seg__meta { font-size: .8rem; color: var(--color-muted); }

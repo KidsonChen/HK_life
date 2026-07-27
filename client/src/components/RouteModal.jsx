@@ -1,8 +1,27 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { api } from '../api.js';
 import { ArrowIcon, BackIcon, CloseIcon, WarnIcon } from '../icons.jsx';
+import { findRoute } from '../mtrTransfer.js';
 
-const VIEW = { ROUTES: 'routes', STOPS: 'stops', ETA: 'eta', MTR_CHOOSE: 'mtr_choose', MTR_HEAVY: 'mtr_heavy', MTR_STATIONS: 'mtr_stations', LRT_STATIONS: 'lrt_stations' };
+const VIEW = { ROUTES: 'routes', STOPS: 'stops', ETA: 'eta', MTR_CHOOSE: 'mtr_choose', MTR_HEAVY: 'mtr_heavy', MTR_STATIONS: 'mtr_stations', LRT_STATIONS: 'lrt_stations', MTR_TRANSFER: 'mtr_transfer' };
+
+const FAV_KEY = 'hk-life-fav-routes';
+const loadFavs = (op) => {
+  try { return (JSON.parse(localStorage.getItem(FAV_KEY) || '{}')[op]) || []; } catch { return []; }
+};
+const saveFavs = (op, list) => {
+  try {
+    const all = JSON.parse(localStorage.getItem(FAV_KEY) || '{}');
+    all[op] = list;
+    localStorage.setItem(FAV_KEY, JSON.stringify(all));
+  } catch { /* ignore */ }
+};
+
+// 熱門路線（常用幹線，無收藏時提供捷徑）
+const POPULAR = {
+  citybus: ['1', '5B', '6', '70', '260', '780', '788', 'A11', 'E11'],
+  kmb: ['1A', '2', '5C', '6', '104', '118', '271', '960', '968']
+};
 
 export default function RouteModal({ op, cfg, onClose }) {
   const isMtr = cfg.type === 'mtr';
@@ -22,6 +41,29 @@ export default function RouteModal({ op, cfg, onClose }) {
   const [lrtStations, setLrtStations] = useState([]);
   const [countdown, setCountdown] = useState(30);
   const [etaStop, setEtaStop] = useState(null);
+  const [favs, setFavs] = useState(() => loadFavs(op));
+  const [tFrom, setTFrom] = useState('');
+  const [tTo, setTTo] = useState('');
+
+  const toggleFav = useCallback((routeNo) => {
+    setFavs((prev) => {
+      const next = prev.includes(routeNo) ? prev.filter(r => r !== routeNo) : [...prev, routeNo];
+      saveFavs(op, next);
+      return next;
+    });
+  }, [op]);
+
+  // 轉車建議：所有重鐵站（去重）
+  const allStations = useMemo(() => {
+    const seen = new Map();
+    mtrLines.forEach(l => (l.stations || []).forEach(([code, name]) => { if (!seen.has(code)) seen.set(code, name); }));
+    return [...seen.entries()].map(([code, name]) => ({ code, name }));
+  }, [mtrLines]);
+
+  const transferPlan = useMemo(() => {
+    if (!tFrom || !tTo || tFrom === tTo || !mtrLines.length) return null;
+    return findRoute(mtrLines, tFrom, tTo);
+  }, [tFrom, tTo, mtrLines]);
 
   const panelRef = useRef(null);
   const searchRef = useRef(null);
@@ -50,7 +92,7 @@ export default function RouteModal({ op, cfg, onClose }) {
 
   // MTR 靜態資料
   useEffect(() => {
-    if (view === VIEW.MTR_HEAVY) api.mtrLines().then(setMtrLines).catch(() => setMtrLines([]));
+    if (view === VIEW.MTR_HEAVY || view === VIEW.MTR_TRANSFER) api.mtrLines().then(setMtrLines).catch(() => setMtrLines([]));
     if (view === VIEW.LRT_STATIONS) api.lrtStations().then(setLrtStations).catch(() => setLrtStations([]));
   }, [view]);
 
@@ -89,7 +131,7 @@ export default function RouteModal({ op, cfg, onClose }) {
       setRoute(null); setView(VIEW.ROUTES);
     } else if (view === VIEW.MTR_STATIONS) {
       setMtrLine(null); setView(VIEW.MTR_HEAVY);
-    } else if (view === VIEW.MTR_HEAVY || view === VIEW.LRT_STATIONS) {
+    } else if (view === VIEW.MTR_HEAVY || view === VIEW.LRT_STATIONS || view === VIEW.MTR_TRANSFER) {
       setMtrMode(null); setView(VIEW.MTR_CHOOSE);
     }
   };
@@ -151,6 +193,60 @@ export default function RouteModal({ op, cfg, onClose }) {
               <button type="button" className="stop-card" onClick={() => { setMtrMode('lrt'); setView(VIEW.LRT_STATIONS); }}>
                 <span className="stop-card__name">輕鐵（新界西北）— 即時到站</span><ArrowIcon />
               </button>
+              <button type="button" className="stop-card stop-card--accent" onClick={() => { setMtrMode('transfer'); setView(VIEW.MTR_TRANSFER); }}>
+                <span className="stop-card__name">轉車建議 — 起點到目的地點對點規劃</span><ArrowIcon />
+              </button>
+            </div>
+          )}
+
+          {/* MTR 轉車建議 */}
+          {view === VIEW.MTR_TRANSFER && (
+            <div>
+              <button className="back-btn" type="button" onClick={goBack}><BackIcon /> 返回</button>
+              <h3 className="stop-pane__title">轉車建議</h3>
+              <div className="transfer-form">
+                <div className="transfer-form__row">
+                  <label className="transfer-form__label" htmlFor="t-from">出發</label>
+                  <select id="t-from" className="transfer-form__select" value={tFrom} onChange={(e) => setTFrom(e.target.value)}>
+                    <option value="">選擇出發站</option>
+                    {allStations.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
+                  </select>
+                </div>
+                <button type="button" className="transfer-form__swap" aria-label="交換起點終點" onClick={() => { setTFrom(tTo); setTTo(tFrom); }}>⇅</button>
+                <div className="transfer-form__row">
+                  <label className="transfer-form__label" htmlFor="t-to">目的地</label>
+                  <select id="t-to" className="transfer-form__select" value={tTo} onChange={(e) => setTTo(e.target.value)}>
+                    <option value="">選擇目的站</option>
+                    {allStations.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {tFrom && tTo && tFrom === tTo && <div className="state-msg">出發站與目的站相同</div>}
+              {transferPlan && (
+                <div className="transfer-plan">
+                  <div className="transfer-plan__summary">
+                    <span className="transfer-plan__stat"><strong>{transferPlan.transfers}</strong> 次轉車</span>
+                    <span className="transfer-plan__stat"><strong>{transferPlan.totalStops}</strong> 個站</span>
+                    <span className="transfer-plan__stat">約 <strong>{transferPlan.est}</strong> 分鐘</span>
+                  </div>
+                  <div className="transfer-plan__segs">
+                    {transferPlan.segments.map((s, i) => (
+                      <div className="transfer-seg" key={i}>
+                        <span className="transfer-seg__badge" style={{ background: s.color }}>{s.lineName}</span>
+                        <div className="transfer-seg__info">
+                          <div className="transfer-seg__route">{s.from} → {s.to}</div>
+                          <div className="transfer-seg__meta">{s.stops} 個站{i < transferPlan.segments.length - 1 ? ` · 於 ${s.to} 轉車` : ''}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="card__hint">時間為粗估（每站約 3 分鐘＋每次轉車約 5 分鐘），僅供參考。</div>
+                </div>
+              )}
+              {tFrom && tTo && tFrom !== tTo && !transferPlan && mtrLines.length > 0 && (
+                <div className="state-msg">找不到合適路線</div>
+              )}
             </div>
           )}
 
@@ -194,16 +290,31 @@ export default function RouteModal({ op, cfg, onClose }) {
             <div className="route-list">
               {routes === null && <div className="skeleton skeleton--line" />}
               {note && <div className="note-banner">{note}</div>}
+              {routes !== null && !query && (
+                <>
+                  {favs.length > 0 && (
+                    <div className="route-group">
+                      <div className="route-group__title">我的收藏</div>
+                      {favs.map((no) => {
+                        const r = routes.find(x => x.route === no);
+                        return r ? <RouteCard key={`fav-${no}`} r={r} fav onFav={toggleFav} onGo={() => loadStops(r.route, dir)} /> : null;
+                      })}
+                    </div>
+                  )}
+                  <div className="route-group">
+                    <div className="route-group__title">熱門路線</div>
+                    <div className="popular-chips">
+                      {(POPULAR[op] || []).map((no) => (
+                        <button type="button" className="popular-chip" key={no} onClick={() => setQuery(no)}>{no}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="route-group__title">全部路線</div>
+                </>
+              )}
               {routes !== null && filteredRoutes.length === 0 && <div className="state-msg">找不到相關路線</div>}
-              {filteredRoutes.map((r) => (
-                <button type="button" className="route-card" key={r.route} onClick={() => loadStops(r.route, dir)}>
-                  <span className="route-card__no">{r.route}</span>
-                  <span className="route-card__info">
-                    <span className="route-card__orig">{r.orig || ''} →</span>
-                    <span className="route-card__dest">{r.dest || ''}</span>
-                  </span>
-                  <ArrowIcon />
-                </button>
+              {filteredRoutes.slice(0, query ? 200 : 60).map((r) => (
+                <RouteCard key={r.route} r={r} fav={favs.includes(r.route)} onFav={toggleFav} onGo={() => loadStops(r.route, dir)} />
               ))}
             </div>
           )}
@@ -252,6 +363,25 @@ export default function RouteModal({ op, cfg, onClose }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function RouteCard({ r, fav, onFav, onGo }) {
+  return (
+    <div className={`route-card ${fav ? 'route-card--fav' : ''}`}>
+      <button type="button" className="route-card__main" onClick={onGo}>
+        <span className="route-card__no">{r.route}</span>
+        <span className="route-card__info">
+          <span className="route-card__orig">{r.orig || ''} →</span>
+          <span className="route-card__dest">{r.dest || ''}</span>
+        </span>
+      </button>
+      <button type="button" className={`fav-btn ${fav ? 'is-fav' : ''}`} aria-label={fav ? '取消收藏' : '收藏路線'} aria-pressed={fav} onClick={(ev) => { ev.stopPropagation(); onFav(r.route); }}>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill={fav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      </button>
     </div>
   );
 }
