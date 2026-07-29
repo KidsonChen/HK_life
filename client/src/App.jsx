@@ -75,6 +75,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
+        <div className="app-header__accent"></div>
         <div className="app-header__brand">
           <span className="app-header__mark" aria-hidden="true"><BuildingIcon size={28} /></span>
           <div>
