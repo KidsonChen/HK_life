@@ -56,7 +56,7 @@ export async function getStops(op, route, dir) {
       const res = await j(`${CONFIG.transport.citybus.baseUrl}/route-stop/${CONFIG.transport.citybus.company}/${encodeURIComponent(route)}/${bound}/`);
       const ids = (res?.data || []).map(d => d.stop).filter(Boolean);
       const stops = await Promise.all(ids.slice(0, 40).map(async id => {
-        const s = await j(`${CONFIG.transport.citybus.baseUrl}/stop/${CONFIG.transport.citybus.company}/${id}/`);
+        const s = await j(`${CONFIG.transport.citybus.baseUrl}/stop/${id}`);
         return { id, name: s?.data?.name_tc || id };
       }));
       return { source: 'live', stops };
