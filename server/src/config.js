@@ -10,7 +10,9 @@ export const CONFIG = {
     warningInfo: 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warningInfo&lang=tc',
     swt: 'https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=swt&lang=tc',
     // 每日最高/平均/最低氣溫（CLMMAXT / CLMINT / CLMTEMP）
-    clm: 'https://data.weather.gov.hk/weatherAPI/opendata/opendata.php'
+    clm: 'https://data.weather.gov.hk/weatherAPI/opendata/opendata.php',
+    // 分區即時氣溫（最新一分鐘平均）CSV
+    regionalTemp: 'https://data.weather.gov.hk/weatherAPI/hko_data/regional-weather/latest_1min_temperature.csv'
   },
   traffic: {
     datastore: 'https://data.gov.hk/api/action/datastore_search',

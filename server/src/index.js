@@ -1,6 +1,6 @@
 import express from 'express';
 import { CONFIG } from './config.js';
-import { getWeather, getTempHistory } from './providers/hko.js';
+import { getWeather, getTempHistory, getRegionalTemp } from './providers/hko.js';
 import { getTraffic } from './providers/traffic.js';
 import {
   getRoutes, getStops, getEta, getMtrLines, getLrtStations
@@ -37,6 +37,12 @@ app.get('/api/weather', async (req, res) => {
 // 天氣：每日氣溫走勢（最高/平均/最低）
 app.get('/api/weather/temphistory', async (req, res) => {
   try { ok(res, await getTempHistory(30)); }
+  catch (e) { fail(res, e); }
+});
+
+// 天氣：分區即時氣溫（最新一分鐘平均）
+app.get('/api/weather/regional-temp', async (req, res) => {
+  try { ok(res, await getRegionalTemp()); }
   catch (e) { fail(res, e); }
 });
 

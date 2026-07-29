@@ -21,5 +21,6 @@ export const api = {
   },
   mtrLines: () => getJson(`${BASE}/mtr/lines`),
   lrtStations: () => getJson(`${BASE}/mtr/lrt-stations`),
-  tempHistory: () => getJson(`${BASE}/weather/temphistory`)
+  tempHistory: () => getJson(`${BASE}/weather/temphistory`),
+  regionalTemp: () => getJson(`${BASE}/weather/regional-temp`)
 };

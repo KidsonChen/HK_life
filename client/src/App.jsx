@@ -51,7 +51,7 @@ export default function App() {
   }, []);
 
   const loadTempHistory = useCallback(async () => {
-    try { const d = await api.tempHistory(); setTempHistory(d); setTempErr(false); }
+    try { const d = await api.regionalTemp(); setTempHistory(d); setTempErr(false); }
     catch { setTempErr(true); }
   }, []);
 

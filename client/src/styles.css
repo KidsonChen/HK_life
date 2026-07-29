@@ -224,22 +224,35 @@ button.traffic-item--ok { border-left-color: var(--status-ok); }
 .eta-row--late .eta-row__mins { color: var(--status-bad); }
 .eta-row__label { font-size: var(--text-xs); color: var(--color-muted); }
 
-/* ===== 氣溫走勢卡片 ===== */
+/* ===== 分區即時氣溫卡片 ===== */
 .card--temp { grid-column: span 1; }
-.temp-summary { display: flex; gap: var(--space-3); margin-bottom: var(--space-3); }
-.temp-summary__item { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.temp-summary { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); }
+.temp-summary__item { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .temp-summary__label { font-size: var(--text-xs); color: var(--color-muted); }
-.temp-summary__val { font-size: var(--text-2xl); font-weight: 700; }
-.temp-summary__val--max { color: #E6553A; }
-.temp-summary__val--min { color: #5BA152; }
-.spark-group { display: flex; flex-direction: column; gap: var(--space-2); }
-.spark-row { display: flex; align-items: center; gap: var(--space-2); }
-.spark-row__label { font-size: var(--text-xs); font-weight: 600; width: 32px; flex-shrink: 0; }
-.spark-row__label--max { color: #E6553A; }
-.spark-row__label--mean { color: #2E8BC0; }
-.spark-row__label--min { color: #5BA152; }
-.spark { width: 100%; height: 56px; display: block; }
-.spark__min, .spark__max { font-size: 9px; fill: var(--color-muted); font-weight: 600; }
+.temp-summary__val { font-size: var(--text-2xl); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.temp-summary__val--max { color: #DC2626; }
+.temp-summary__val--min { color: #2563EB; }
+.temp-summary__sub { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 分區清單 */
+.regional-list { display: grid; gap: 4px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+.regional-list::-webkit-scrollbar { width: 6px; }
+.regional-list::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+.regional-row { display: flex; align-items: center; gap: var(--space-2); padding: 6px 8px; background: var(--color-background); border-radius: var(--radius-sm); transition: background .15s var(--ease); }
+.regional-row:hover { background: var(--color-border); }
+.regional-row__rank { flex: none; width: 22px; font-size: var(--text-xs); font-weight: 700; color: var(--color-muted); text-align: center; font-variant-numeric: tabular-nums; }
+.regional-row__name { flex: none; width: 92px; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.regional-row__zh { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.regional-row__en { font-size: 10px; color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.regional-row__bar { flex: 1; min-width: 0; height: 8px; background: var(--color-border); border-radius: 4px; overflow: hidden; }
+.regional-row__bar-fill { display: block; height: 100%; border-radius: 4px; transition: width .3s var(--ease); }
+.regional-row__temp { flex: none; min-width: 48px; text-align: right; font-size: var(--text-md); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 520px) {
+  .regional-row__name { width: 80px; }
+  .regional-row__rank { width: 18px; }
+  .regional-row__temp { min-width: 42px; font-size: var(--text-sm); }
+}
 
 /* ===== 天氣警告 / 分區雨量 ===== */
 .weather-warning { margin-top: var(--space-2); display: flex; flex-direction: column; gap: 6px; }
