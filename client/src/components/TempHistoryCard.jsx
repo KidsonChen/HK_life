@@ -27,27 +27,13 @@ function tempColor(temp) {
 export default function TempHistoryCard({ data, error, loading }) {
   const [selectedDistrict, setSelectedDistrict] = useState('ALL');
 
-  if (loading) {
-    return (
-      <section className="card card--temp" aria-labelledby="temp-title">
-        <div className="card__head"><h2 id="temp-title">分區氣溫</h2></div>
-        <div className="skeleton skeleton--block" role="status"><span className="visually-hidden">載入中…</span></div>
-      </section>
-    );
-  }
-  if (error || !data || !data.stations?.length) {
-    return (
-      <section className="card card--temp" aria-labelledby="temp-title">
-        <div className="card__head"><h2 id="temp-title">分區氣溫</h2></div>
-        <div className="state-msg">{error ? '無法載入分區氣溫' : '暫無資料'}</div>
-      </section>
-    );
-  }
+  const stations = data?.stations || [];
+  const districts = data?.districts || [];
+  const summary = data?.summary || null;
+  const observedAt = data?.observedAt || '';
+  const isDemo = data?.source === 'demo';
 
-  const { summary, stations, districts, observedAt, source } = data;
-  const isDemo = source === 'demo';
-
-  // 篩選站點
+  // 篩選站點（hooks 必須在條件 return 之前呼叫）
   const filteredStations = useMemo(() => {
     if (selectedDistrict === 'ALL') return stations;
     return stations.filter(s => s.district === selectedDistrict);
@@ -72,7 +58,24 @@ export default function TempHistoryCard({ data, error, loading }) {
 
   const selectedDistrictName = selectedDistrict === 'ALL'
     ? '全港'
-    : districts?.find(d => d.code === selectedDistrict)?.name || '';
+    : districts.find(d => d.code === selectedDistrict)?.name || '';
+
+  if (loading) {
+    return (
+      <section className="card card--temp" aria-labelledby="temp-title">
+        <div className="card__head"><h2 id="temp-title">分區氣溫</h2></div>
+        <div className="skeleton skeleton--block" role="status"><span className="visually-hidden">載入中…</span></div>
+      </section>
+    );
+  }
+  if (error || !data || !stations.length) {
+    return (
+      <section className="card card--temp" aria-labelledby="temp-title">
+        <div className="card__head"><h2 id="temp-title">分區氣溫</h2></div>
+        <div className="state-msg">{error ? '無法載入分區氣溫' : '暫無資料'}</div>
+      </section>
+    );
+  }
 
   return (
     <section className="card card--temp" aria-labelledby="temp-title">
