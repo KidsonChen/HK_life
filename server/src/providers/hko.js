@@ -10,6 +10,28 @@ const tget = async (url) => {
   catch { return null; }
 };
 
+// 香港 18 區
+const DISTRICTS = [
+  { code: 'CW',   name: '中西區' },
+  { code: 'WC',   name: '灣仔區' },
+  { code: 'E',    name: '東區' },
+  { code: 'S',    name: '南區' },
+  { code: 'YTM',  name: '油尖旺區' },
+  { code: 'SSP',  name: '深水埗區' },
+  { code: 'KC',   name: '九龍城區' },
+  { code: 'WTS',  name: '黃大仙區' },
+  { code: 'KT',   name: '觀塘區' },
+  { code: 'TW',   name: '荃灣區' },
+  { code: 'TM',   name: '屯門區' },
+  { code: 'YL',   name: '元朗區' },
+  { code: 'N',    name: '北區' },
+  { code: 'TP',   name: '大埔區' },
+  { code: 'SK',   name: '西貢區' },
+  { code: 'ST',   name: '沙田區' },
+  { code: 'QT',   name: '葵青區' },
+  { code: 'ISL',  name: '離島區' }
+];
+
 // 分區氣象站英中對照表
 const STATION_ZH = {
   'Chek Lap Kok': '赤鱲角',
@@ -51,6 +73,49 @@ const STATION_ZH = {
   'Wong Chuk Hang': '黃竹坑',
   'Wong Tai Sin': '黃大仙',
   'Yuen Long Park': '元朗公園'
+};
+
+// 氣象站 → 18 區代碼
+const STATION_DISTRICT = {
+  'Chek Lap Kok': 'ISL',
+  'Cheung Chau': 'ISL',
+  'Clear Water Bay': 'SK',
+  'Happy Valley': 'WC',
+  'HK Observatory': 'YTM',
+  'HK Park': 'CW',
+  'Kai Tak Runway Park': 'KC',
+  'Kau Sai Chau': 'SK',
+  "King's Park": 'YTM',
+  'Kowloon City': 'KC',
+  'Kwun Tong': 'KT',
+  'Lau Fau Shan': 'YL',
+  'Ngong Ping': 'ISL',
+  'Pak Tam Chung': 'SK',
+  'Peng Chau': 'ISL',
+  'Sai Kung': 'SK',
+  'Sha Tin': 'ST',
+  'Sham Shui Po': 'SSP',
+  'Shau Kei Wan': 'E',
+  'Shek Kong': 'YL',
+  'Sheung Shui': 'N',
+  'Stanley': 'S',
+  'Ta Kwu Ling': 'N',
+  'Tai Lung': 'N',
+  'Tai Mei Tuk': 'TP',
+  'Tai Mo Shan': 'TW',
+  'Tai Po': 'TP',
+  "Tate's Cairn": 'ST',
+  'The Peak': 'CW',
+  'Tseung Kwan O': 'SK',
+  'Tsing Yi': 'QT',
+  'Tsuen Wan Ho Koon': 'TW',
+  'Tsuen Wan Shing Mun Valley': 'TW',
+  'Tuen Mun': 'TM',
+  'Waglan Island': 'ISL',
+  'Wetland Park': 'YL',
+  'Wong Chuk Hang': 'S',
+  'Wong Tai Sin': 'WTS',
+  'Yuen Long Park': 'YL'
 };
 
 // 香港天文台：即時天氣 + 九天預報 + 各區雨量 + 警告
@@ -204,19 +269,22 @@ function demoHistory() {
   return { source: 'demo', max: gen(30, 2), min: gen(25, 1.5), mean: gen(27, 1.8) };
 }
 
-// 分區即時氣溫（最新一分鐘平均）— CSV 解析
+// 分區即時氣溫（最新一分鐘平均）— CSV 解析 + 18 區分組 + 濕度
 export async function getRegionalTemp() {
   try {
-    const csv = await tget(CONFIG.weather.regionalTemp);
+    const [csv, rhr] = await Promise.all([
+      tget(CONFIG.weather.regionalTemp),
+      jget(CONFIG.weather.rhrread)
+    ]);
     if (!csv) return demoRegionalTemp();
-    return parseRegionalTempCsv(csv);
+    return parseRegionalTempCsv(csv, rhr);
   } catch (err) {
     console.error('[hko] 分區氣溫失敗:', err.message);
     return demoRegionalTemp();
   }
 }
 
-function parseRegionalTempCsv(csv) {
+function parseRegionalTempCsv(csv, rhr) {
   const lines = csv.trim().split(/\r?\n/);
   if (lines.length < 2) return demoRegionalTemp();
 
@@ -230,6 +298,16 @@ function parseRegionalTempCsv(csv) {
     observedAt = `${y}-${mo}-${d} ${h}:${mi}`;
   }
 
+  // 從 rhrread 取得各站濕度（以中文站名對應）
+  const humidityMap = {};
+  if (rhr?.humidity?.data) {
+    for (const h of rhr.humidity.data) {
+      if (h.place && h.value != null) humidityMap[h.place] = h.value;
+    }
+  }
+  // 天文台濕度作為全域 fallback
+  const globalHumidity = humidityMap['香港天文台'] ?? null;
+
   const stations = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(',');
@@ -238,11 +316,11 @@ function parseRegionalTempCsv(csv) {
     const tempStr = (cols[2] || '').trim();
     const temp = num(tempStr);
     if (temp == null) continue; // 跳過 N/A
-    stations.push({
-      en,
-      zh: STATION_ZH[en] || en,
-      temp
-    });
+    const zh = STATION_ZH[en] || en;
+    const district = STATION_DISTRICT[en] || null;
+    // 濕度：優先該站，否則用全域
+    const humidity = humidityMap[zh] ?? globalHumidity;
+    stations.push({ en, zh, temp, humidity, district });
   }
 
   if (!stations.length) return demoRegionalTemp();
@@ -257,10 +335,28 @@ function parseRegionalTempCsv(csv) {
   const maxStation = stations.find(s => s.temp === max);
   const minStation = stations.find(s => s.temp === min);
 
+  // 18 區分組摘要
+  const districts = DISTRICTS.map(d => {
+    const ds = stations.filter(s => s.district === d.code);
+    if (!ds.length) return { code: d.code, name: d.name, count: 0 };
+    const dt = ds.map(s => s.temp);
+    const dh = ds.map(s => s.humidity).filter(v => v != null);
+    return {
+      code: d.code,
+      name: d.name,
+      count: ds.length,
+      tempMax: Math.max(...dt),
+      tempMin: Math.min(...dt),
+      tempMean: +(dt.reduce((a, b) => a + b, 0) / dt.length).toFixed(1),
+      humidity: dh.length ? +(dh.reduce((a, b) => a + b, 0) / dh.length).toFixed(0) : null
+    };
+  }).filter(d => d.count > 0);
+
   return {
     source: 'hko',
     observedAt,
     stations,
+    districts,
     summary: { max, min, mean, maxStation, minStation, count: stations.length }
   };
 }
@@ -279,15 +375,38 @@ function demoRegionalTemp() {
     ['Yuen Long Park', 26.1], ['Stanley', 26.4], ['Cheung Chau', 26.0], ['Peng Chau', 26.8],
     ['Waglan Island', 26.2], ['Shau Kei Wan', 26.6]
   ];
-  const stations = raw.map(([en, temp]) => ({ en, zh: STATION_ZH[en] || en, temp }))
-    .sort((a, b) => b.temp - a.temp);
+  const stations = raw.map(([en, temp]) => ({
+    en,
+    zh: STATION_ZH[en] || en,
+    temp,
+    humidity: 80 + Math.round(Math.random() * 10),
+    district: STATION_DISTRICT[en] || null
+  })).sort((a, b) => b.temp - a.temp);
   const temps = stations.map(s => s.temp);
   const max = Math.max(...temps), min = Math.min(...temps);
   const mean = +(temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1);
+
+  const districts = DISTRICTS.map(d => {
+    const ds = stations.filter(s => s.district === d.code);
+    if (!ds.length) return null;
+    const dt = ds.map(s => s.temp);
+    const dh = ds.map(s => s.humidity).filter(v => v != null);
+    return {
+      code: d.code,
+      name: d.name,
+      count: ds.length,
+      tempMax: Math.max(...dt),
+      tempMin: Math.min(...dt),
+      tempMean: +(dt.reduce((a, b) => a + b, 0) / dt.length).toFixed(1),
+      humidity: dh.length ? +(dh.reduce((a, b) => a + b, 0) / dh.length).toFixed(0) : null
+    };
+  }).filter(Boolean);
+
   return {
     source: 'demo',
     observedAt,
     stations,
+    districts,
     summary: {
       max, min, mean,
       maxStation: stations.find(s => s.temp === max),
