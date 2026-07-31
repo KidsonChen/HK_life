@@ -60,6 +60,17 @@
     --text-lg: 1.1875rem;  /* 19px, 原 18px */
     --text-xl: 1.3125rem;  /* 21px, 原 20px */
   }
+  /* Header 手機優化 — 避免內容爆版 */
+  .app-header { flex-wrap: wrap; padding: var(--space-3); gap: var(--space-2); }
+  .app-header__brand { gap: var(--space-2); }
+  .app-header__mark { width: 40px; height: 40px; border-radius: 12px; }
+  .btn-refresh span { display: none; }
+  .btn-refresh { padding: 8px 12px; }
+  /* 版面手機優化 — 避免內容爆版 */
+  .transport-grid { grid-template-columns: 1fr; }
+  .current-weather { flex-direction: column; text-align: center; }
+  .forecast__list { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 64px; overflow-x: auto; padding-bottom: var(--space-1); scroll-snap-type: x mandatory; }
+  .forecast-day { scroll-snap-align: start; }
 }
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }

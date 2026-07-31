@@ -682,6 +682,7 @@ h1, h2, h3 { font-weight: 700; line-height: 1.25; }
    針對手機裝置提升字體大小，方便閱讀
    =================================================================== */
 @media (max-width: 767px) {
+    .app-header { flex-wrap: wrap; }
     .app-header h1 { font-size: 1.25rem; }
     .app-header__sub { font-size: .9rem; }
     .btn-refresh { font-size: .9rem; }
