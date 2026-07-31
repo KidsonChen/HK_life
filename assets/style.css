@@ -676,3 +676,55 @@ h1, h2, h3 { font-weight: 700; line-height: 1.25; }
 
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+
+/* ===================================================================
+   手機閱讀優化 — 放大字級
+   針對手機裝置提升字體大小，方便閱讀
+   =================================================================== */
+@media (max-width: 767px) {
+    .app-header h1 { font-size: 1.25rem; }
+    .app-header__sub { font-size: .9rem; }
+    .btn-refresh { font-size: .9rem; }
+
+    .card__head h2 { font-size: 1.15rem; }
+    .card__badge { font-size: .875rem; }
+
+    .current-weather__temp { font-size: 2.2rem; }
+    .current-weather__desc { font-size: 1rem; }
+    .chip { font-size: .875rem; }
+
+    .warning-badge { font-size: .875rem; }
+    .forecast__title { font-size: 1rem; }
+    .forecast-day__date { font-size: .825rem; }
+    .forecast-day__temp { font-size: .9rem; }
+
+    .forecast-chart__title { font-size: .95rem; }
+    .forecast-chart__label { font-size: .825rem; }
+
+    .traffic-item__road { font-size: 1rem; }
+    .traffic-item__status { font-size: .9rem; }
+
+    .transport-col__title { font-size: 1.05rem; }
+    .transport-item { font-size: .95rem; }
+    .transport-item__status { font-size: .875rem; }
+    .transport-col__hint { font-size: .875rem; }
+
+    .state-msg { font-size: 1rem; }
+    .app-footer { font-size: .9rem; }
+
+    .modal__operator { font-size: .9rem; }
+    .modal__title { font-size: 1.3rem; }
+    .modal__search { font-size: 1rem; }
+    .dir-btn { font-size: .95rem; }
+
+    .route-card__no { font-size: 1.05rem; }
+    .route-card__orig { font-size: 1rem; }
+    .back-btn { font-size: 1rem; }
+    .stop-pane__title { font-size: 1.1rem; }
+
+    .note-banner { font-size: .95rem; }
+    .eta-refresh { font-size: .875rem; }
+    .eta-row__remark { font-size: .9rem; }
+    .eta-row__label { font-size: .825rem; }
+    .eta-row__mins { font-size: 1.5rem; }
+}
