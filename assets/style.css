@@ -121,7 +121,7 @@ h1, h2, h3 { font-weight: 700; line-height: 1.25; }
 .app-header__brand { display: flex; align-items: center; gap: var(--space-2); }
 .app-header__mark {
     display: grid; place-items: center;
-    width: 40px; height: 40px;
+    width: auto; height: 40px;
     background: rgba(255,255,255,.18);
     border-radius: 12px;
     flex: none;
