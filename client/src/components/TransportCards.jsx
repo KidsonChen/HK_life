@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowIcon } from '../icons.jsx';
+import { ArrowIcon, TrainIcon } from '../icons.jsx';
 
 const LINE_LABELS = { citybus: '城巴', kmb: '九巴', mtr: '港鐵' };
 
@@ -7,7 +7,7 @@ export default function TransportCards({ data, onOpen }) {
   const ops = ['citybus', 'kmb', 'mtr'];
   return (
     <section className="card card--transport" id="transport" aria-labelledby="transport-title">
-      <div className="card__head"><h2 id="transport-title">即時運輸資料</h2></div>
+      <div className="card__head"><h2 id="transport-title"><TrainIcon size={18} /> 即時運輸資料</h2></div>
       <div className="transport-grid">
         {ops.map((op) => {
           const items = data[op];

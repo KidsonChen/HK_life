@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { WarnIcon, CloseIcon } from '../icons.jsx';
+import { WarnIcon, CloseIcon, CarIcon } from '../icons.jsx';
 
 function severity(status, type) {
   if (type === 'resolved') return 'traffic-item--ok';
@@ -27,7 +27,7 @@ export default function TrafficCard({ data, error, loading }) {
   if (loading) {
     return (
       <section className="card card--traffic" id="traffic" aria-labelledby="traffic-title">
-        <div className="card__head"><h2 id="traffic-title">交通情況</h2></div>
+        <div className="card__head"><h2 id="traffic-title"><CarIcon size={18} /> 交通情況</h2></div>
         <div className="skeleton skeleton--block" role="status"><span className="visually-hidden">載入中…</span></div>
       </section>
     );
@@ -35,7 +35,7 @@ export default function TrafficCard({ data, error, loading }) {
   if (error || !data || !data.items?.length) {
     return (
       <section className="card card--traffic" id="traffic" aria-labelledby="traffic-title">
-        <div className="card__head"><h2 id="traffic-title">交通情況</h2></div>
+        <div className="card__head"><h2 id="traffic-title"><CarIcon size={18} /> 交通情況</h2></div>
         <div className="state-msg">{error ? <><WarnIcon /> <span>無法載入交通資料</span></> : '目前沒有公路或港鐵事故'}</div>
       </section>
     );
@@ -43,7 +43,7 @@ export default function TrafficCard({ data, error, loading }) {
   return (
     <section className="card card--traffic" id="traffic" aria-labelledby="traffic-title">
       <div className="card__head">
-        <h2 id="traffic-title">交通情況</h2>
+        <h2 id="traffic-title"><CarIcon size={18} /> 交通情況</h2>
         <span className="card__hint">公路 · 港鐵 事故</span>
       </div>
       <div className="traffic" aria-live="polite">

@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { api } from './api.js';
-import { RefreshIcon, BuildingIcon } from './icons.jsx';
+import { RefreshIcon, BuildingIcon, CheckIcon, InfoIcon, WarnIcon, UpIcon } from './icons.jsx';
 import WeatherCard from './components/WeatherCard.jsx';
 import TrafficCard from './components/TrafficCard.jsx';
 import TransportCards from './components/TransportCards.jsx';
@@ -13,6 +13,23 @@ const OPERATORS = {
   mtr: { label: '港鐵', color: 'var(--line-mtr)', type: 'mtr' }
 };
 
+/* ===== Toast 通知元件 ===== */
+function Toast({ toast, onDone }) {
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    const t1 = setTimeout(() => setLeaving(true), 2500);
+    const t2 = setTimeout(onDone, 2900);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [onDone]);
+  const Icon = toast.type === 'success' ? CheckIcon : toast.type === 'error' ? WarnIcon : InfoIcon;
+  return (
+    <div className={`toast toast--${toast.type} ${leaving ? 'is-leaving' : ''}`} role="status">
+      <span className="toast__icon"><Icon size={16} /></span>
+      <span className="toast__msg">{toast.msg}</span>
+    </div>
+  );
+}
+
 export default function App() {
   const [weather, setWeather] = useState(null);
   const [weatherErr, setWeatherErr] = useState(false);
@@ -22,9 +39,22 @@ export default function App() {
   const [tempHistory, setTempHistory] = useState(null);
   const [tempErr, setTempErr] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [toasts, setToasts] = useState([]);
+  const [showTop, setShowTop] = useState(false);
 
   const [modalOp, setModalOp] = useState(null); // 當前開啟的運輸商
   const [lastFocus, setLastFocus] = useState(null);
+  const toastId = useRef(0);
+
+  const pushToast = useCallback((type, msg) => {
+    const id = ++toastId.current;
+    setToasts((prev) => [...prev, { id, type, msg }]);
+  }, []);
+
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter(t => t.id !== id));
+  }, []);
 
   const loadWeather = useCallback(async () => {
     try { const d = await api.weather(); setWeather(d); setWeatherErr(false); }
@@ -58,10 +88,30 @@ export default function App() {
   const refreshAll = useCallback(() => {
     setLoading(true);
     Promise.allSettled([loadWeather(), loadTraffic(), loadTransport(), loadTempHistory()])
+      .then((results) => {
+        const failed = results.filter(r => r.status === 'rejected').length;
+        if (failed === 0) {
+          setLastUpdated(new Date());
+          pushToast('success', '資料已更新');
+        } else if (failed === results.length) {
+          pushToast('error', '無法更新資料，請稍後再試');
+        } else {
+          pushToast('info', `部分資料更新失敗（${failed}/${results.length}）`);
+        }
+      })
       .finally(() => setTimeout(() => setLoading(false), 600));
-  }, [loadWeather, loadTraffic, loadTransport, loadTempHistory]);
+  }, [loadWeather, loadTraffic, loadTransport, loadTempHistory, pushToast]);
 
   useEffect(() => { refreshAll(); }, [refreshAll]);
+
+  // 回到頂部按鈕：監聽捲動
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   const openModal = (op) => {
     setLastFocus(document.activeElement);
@@ -71,6 +121,10 @@ export default function App() {
     setModalOp(null);
     lastFocus?.focus?.();
   };
+
+  const updatedText = lastUpdated
+    ? `最後更新 ${lastUpdated.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' })}`
+    : '';
 
   return (
     <div className="app">
@@ -83,10 +137,13 @@ export default function App() {
             <p className="app-header__sub">天氣 · 交通 · 即時運輸</p>
           </div>
         </div>
-        <button className={`btn-refresh ${loading ? 'is-loading' : ''}`} type="button" onClick={refreshAll} aria-label="重新整理所有資料">
-          <RefreshIcon />
-          <span>重新整理</span>
-        </button>
+        <div className="app-header__meta">
+          {updatedText && <span className="app-header__updated">{updatedText}</span>}
+          <button className={`btn-refresh ${loading ? 'is-loading' : ''}`} type="button" onClick={refreshAll} aria-label="重新整理所有資料">
+            <RefreshIcon />
+            <span>重新整理</span>
+          </button>
+        </div>
       </header>
 
       <main id="main" className="bento">
@@ -103,6 +160,21 @@ export default function App() {
         <p>資料來源：香港天文台 · DATA.GOV.HK</p>
         <p>香港生活資訊 © 2026</p>
       </footer>
+
+      {/* Toast 通知 */}
+      <div className="toast-container" aria-live="polite">
+        {toasts.map(t => <Toast key={t.id} toast={t} onDone={() => removeToast(t.id)} />)}
+      </div>
+
+      {/* 回到頂部 */}
+      <button
+        type="button"
+        className={`back-to-top ${showTop ? 'is-visible' : ''}`}
+        onClick={scrollTop}
+        aria-label="回到頂部"
+      >
+        <UpIcon size={20} />
+      </button>
 
       {modalOp && (
         <RouteModal

@@ -1,11 +1,11 @@
 import React from 'react';
-import { WeatherIcon, WarnIcon } from '../icons.jsx';
+import { WeatherIcon, WarnIcon, SunIcon } from '../icons.jsx';
 
 export default function WeatherCard({ data, error, loading }) {
   if (loading) {
     return (
       <section className="card card--weather" id="weather" aria-labelledby="weather-title">
-        <div className="card__head"><h2 id="weather-title">天氣預報</h2></div>
+        <div className="card__head"><h2 id="weather-title"><SunIcon size={18} /> 天氣預報</h2></div>
         <div className="skeleton skeleton--current" role="status"><span className="visually-hidden">載入中…</span></div>
         <div className="forecast__list">{Array.from({ length: 7 }, (_, i) => <div key={i} className="skeleton skeleton--line" />)}</div>
       </section>
@@ -14,7 +14,7 @@ export default function WeatherCard({ data, error, loading }) {
   if (error || !data) {
     return (
       <section className="card card--weather" id="weather" aria-labelledby="weather-title">
-        <div className="card__head"><h2 id="weather-title">天氣預報</h2></div>
+        <div className="card__head"><h2 id="weather-title"><SunIcon size={18} /> 天氣預報</h2></div>
         <div className="state-msg state-msg--error"><WarnIcon /> <span>無法載入天氣資料</span></div>
       </section>
     );
@@ -23,7 +23,7 @@ export default function WeatherCard({ data, error, loading }) {
   return (
     <section className="card card--weather" id="weather" aria-labelledby="weather-title">
       <div className="card__head">
-        <h2 id="weather-title">天氣預報</h2>
+        <h2 id="weather-title"><SunIcon size={18} /> 天氣預報</h2>
         <span className="card__badge">香港</span>
       </div>
       <div className="current-weather" aria-live="polite">

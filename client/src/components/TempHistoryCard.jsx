@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { ThermometerIcon } from '../icons.jsx';
 
 // 溫度色階：冷藍 → 涼綠 → 暖橙 → 熱紅
 function tempColor(temp) {
@@ -63,7 +64,7 @@ export default function TempHistoryCard({ data, error, loading }) {
   if (loading) {
     return (
       <section className="card card--temp" aria-labelledby="temp-title">
-        <div className="card__head"><h2 id="temp-title">分區氣溫</h2></div>
+        <div className="card__head"><h2 id="temp-title"><ThermometerIcon size={18} /> 分區氣溫</h2></div>
         <div className="skeleton skeleton--block" role="status"><span className="visually-hidden">載入中…</span></div>
       </section>
     );
@@ -71,7 +72,7 @@ export default function TempHistoryCard({ data, error, loading }) {
   if (error || !data || !stations.length) {
     return (
       <section className="card card--temp" aria-labelledby="temp-title">
-        <div className="card__head"><h2 id="temp-title">分區氣溫</h2></div>
+        <div className="card__head"><h2 id="temp-title"><ThermometerIcon size={18} /> 分區氣溫</h2></div>
         <div className="state-msg">{error ? '無法載入分區氣溫' : '暫無資料'}</div>
       </section>
     );
@@ -80,7 +81,7 @@ export default function TempHistoryCard({ data, error, loading }) {
   return (
     <section className="card card--temp" aria-labelledby="temp-title">
       <div className="card__head">
-        <h2 id="temp-title">分區氣溫</h2>
+        <h2 id="temp-title"><ThermometerIcon size={18} /> 分區氣溫</h2>
         <span className="card__hint">{selectedDistrictName} · {observedAt || ''}{isDemo ? ' · 示範' : ''}</span>
       </div>
 

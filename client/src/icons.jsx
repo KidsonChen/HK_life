@@ -74,4 +74,38 @@ const BuildingIcon = ({ size = 28 }) => (
 );
 const BackIcon = ({ size = 18 }) => svg('M15 18l-6-6 6-6', size);
 
-export { WeatherIcon, ArrowIcon, RefreshIcon, WarnIcon, CloseIcon, BuildingIcon, BackIcon };
+/* ===== 新增：卡片標題圖示 ===== */
+const SunIcon = ({ size = 18 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+  </svg>
+);
+const CarIcon = ({ size = 18 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11" />
+    <path d="M4 11h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1a2 2 0 0 1-4 0H9a2 2 0 0 1-4 0H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z" />
+    <circle cx="7.5" cy="15" r=".5" fill="currentColor" /><circle cx="16.5" cy="15" r=".5" fill="currentColor" />
+  </svg>
+);
+const TrainIcon = ({ size = 18 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="4" y="3" width="16" height="14" rx="2" />
+    <path d="M4 11h16M8 7h.01M16 7h.01M8 15h.01M16 15h.01M9 21l-2 2M15 21l2 2" />
+  </svg>
+);
+const ThermometerIcon = ({ size = 18 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
+  </svg>
+);
+const CheckIcon = ({ size = 18 }) => svg('M20 6 9 17l-5-5', size);
+const InfoIcon = ({ size = 18 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 16v-4M12 8h.01" />
+  </svg>
+);
+const UpIcon = ({ size = 20 }) => svg('M12 19V5M5 12l7-7 7 7', size);
+
+export { WeatherIcon, ArrowIcon, RefreshIcon, WarnIcon, CloseIcon, BuildingIcon, BackIcon, SunIcon, CarIcon, TrainIcon, ThermometerIcon, CheckIcon, InfoIcon, UpIcon };
