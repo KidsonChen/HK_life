@@ -19,7 +19,9 @@ export const api = {
     if (line) q.set('line', line);
     return getJson(`${BASE}/transport/${op}/eta?${q.toString()}`);
   },
+  busLive: (op, route, dir) => getJson(`${BASE}/transport/${op}/live?route=${encodeURIComponent(route)}&dir=${dir}`),
   mtrLines: () => getJson(`${BASE}/mtr/lines`),
+  mtrGeo: () => getJson(`${BASE}/mtr/geo`),
   lrtStations: () => getJson(`${BASE}/mtr/lrt-stations`),
   tempHistory: () => getJson(`${BASE}/weather/temphistory`),
   regionalTemp: () => getJson(`${BASE}/weather/regional-temp`)

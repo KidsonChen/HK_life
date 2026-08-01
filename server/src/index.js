@@ -5,6 +5,8 @@ import { getTraffic } from './providers/traffic.js';
 import {
   getRoutes, getStops, getEta, getMtrLines, getLrtStations
 } from './providers/transport.js';
+import { getBusLive } from './providers/buslive.js';
+import { MTR_STATION_GEO } from './mtrGeo.js';
 
 const app = express();
 
@@ -74,9 +76,19 @@ app.get('/api/transport/:op/eta', async (req, res) => {
   catch (e) { fail(res, e); }
 });
 
+// 巴士即時位置（由整線 ETA 推算，香港無公開巴士 GPS API）
+app.get('/api/transport/:op/live', async (req, res) => {
+  const { route, dir = 'outbound' } = req.query;
+  if (!route) return res.status(400).json({ error: 'route 必填' });
+  try { ok(res, await getBusLive(req.params.op, route, dir)); }
+  catch (e) { fail(res, e); }
+});
+
 // 港鐵靜態資料
 app.get('/api/mtr/lines', (req, res) => ok(res, getMtrLines()));
 app.get('/api/mtr/lrt-stations', (req, res) => ok(res, getLrtStations()));
+// 港鐵站經緯度（OpenStreetMap, ODbL）
+app.get('/api/mtr/geo', (req, res) => ok(res, MTR_STATION_GEO));
 
 // 健康檢查
 app.get('/api/health', (req, res) => ok(res, { ok: true, demo: CONFIG.demo }));
@@ -87,15 +99,16 @@ import { dirname, join } from 'path';
 import { existsSync } from 'fs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// assets 目錄
-const assetsDir = join(__dirname, '../../assets');
-app.use(express.static(assetsDir));
-
-// 產品靜態檔（build 後由 client 提供）
+// 產品靜態檔（build 後由 client 提供）— 須先於 assets 掛載，
+// 否則 assets/index.html（舊版純前端頁）會蓋掉 React build 的 index.html
 const clientDist = join(__dirname, '../../client/dist');
 if (existsSync(clientDist)) {
   app.use(express.static(clientDist));
 }
+
+// assets 目錄（舊版靜態頁與圖片資源）
+const assetsDir = join(__dirname, '../../assets');
+app.use(express.static(assetsDir));
 
 // 本地開發才啟動監聽；Vercel Serverless Function 環境由 api/index.js 匯入 app，不在此 listen
 if (!process.env.VERCEL) {

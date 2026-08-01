@@ -6,6 +6,8 @@ import TrafficCard from './components/TrafficCard.jsx';
 import TransportCards from './components/TransportCards.jsx';
 import RouteModal from './components/RouteModal.jsx';
 import TempHistoryCard from './components/TempHistoryCard.jsx';
+import BusMapCard from './components/BusMapCard.jsx';
+import MtrMapCard from './components/MtrMapCard.jsx';
 
 const OPERATORS = {
   citybus: { label: '城巴', color: 'var(--line-citybus)', type: 'bus' },
@@ -129,10 +131,14 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <div className="app-header__accent"></div>
+        <div className="app-header__ribbon" aria-hidden="true">
+          {['#E60012','#00A040','#0860A8','#7D499D','#9C2E00','#5EB7E8','#CBD300','#F7943E','#00888E','#EB6EA5']
+            .map((c) => <i key={c} style={{ background: c }} />)}
+        </div>
         <div className="app-header__brand">
           <span className="app-header__mark" aria-hidden="true"><BuildingIcon size={28} /></span>
           <div>
+            <p className="app-header__eyebrow">HONG KONG · 即時</p>
             <h1>香港生活資訊</h1>
             <p className="app-header__sub">天氣 · 交通 · 即時運輸</p>
           </div>
@@ -150,6 +156,8 @@ export default function App() {
         <WeatherCard data={weather} error={weatherErr} loading={!weather && !weatherErr} />
         <TempHistoryCard data={tempHistory} error={tempErr} loading={!tempHistory && !tempErr} />
         <TrafficCard data={traffic} error={trafficErr} loading={!traffic && !trafficErr} />
+        <BusMapCard />
+        <MtrMapCard />
         <TransportCards
           data={transport}
           onOpen={openModal}

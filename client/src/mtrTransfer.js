@@ -95,6 +95,9 @@ export function findRoute(lines, fromSta, toSta) {
       lineCode: s.line,
       lineName: lineMap[s.line]?.name || s.line,
       color: lineMap[s.line]?.color || '#2563EB',
+      fromCode: s.stations[0],
+      toCode: s.stations[s.stations.length - 1],
+      stationCodes: s.stations.slice(),
       from: nameMap[s.stations[0]] || s.stations[0],
       to: nameMap[s.stations[s.stations.length - 1]] || s.stations[s.stations.length - 1],
       stops: Math.max(0, s.stations.length - 1)
