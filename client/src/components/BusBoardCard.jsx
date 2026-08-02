@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { api } from '../api.js';
+import RouteMap from './RouteMap.jsx';
 
 const OPS = [
   { key: 'kmb', label: '九巴', color: '#E60012' },
@@ -13,7 +14,33 @@ function etaText(mins) {
   return `${mins} 分鐘`;
 }
 
-// 電子看板本體：依到站時間排序，即將到站轉綠閃爍
+// 由「上車站 ETA」與「下車站 ETA」推算乘車時間與預計到達
+// 兩站各自獨立預報，故以「同班車」假設配對：上車站第 k 班 ⇄ 下車站第 k 班。
+// 下車站比上車站更早到（= 已在車上/過站）的配對視為不合理，略過。
+function computeRide(boardEtas, alightEtas) {
+  if (!boardEtas || !alightEtas) return [];
+  const b = boardEtas.map(e => ({ mins: e.mins, dest: e.dest, remark: e.remark }))
+    .filter(x => x.mins != null)
+    .sort((a, b) => a.mins - b.mins);
+  const a = alightEtas.map(e => ({ mins: e.mins, dest: e.dest, remark: e.remark }))
+    .filter(x => x.mins != null)
+    .sort((a, b) => a.mins - b.mins);
+  const out = [];
+  for (let i = 0; i < Math.max(b.length, a.length); i++) {
+    const be = b[i]; const ae = a[i];
+    if (!be || !ae) continue;
+    const ride = ae.mins - be.mins;
+    if (ride < 0) continue; // 下車比上車更早到，不合理
+    out.push({
+      boardMins: be.mins,
+      alightMins: ae.mins,
+      ride,
+      dest: ae.dest || be.dest
+    });
+  }
+  return out;
+}
+
 function Board({ route, dest, clock, rows, caption }) {
   return (
     <div className="board" role="region" aria-label={`${route} 路線即時到站看板`}>
@@ -59,20 +86,19 @@ export default function BusBoardCard() {
   const [input, setInput] = useState('968');
   const [dir, setDir] = useState('outbound');
 
-  const [stops, setStops] = useState(null);        // 該路線站序
-  const [boardStop, setBoardStop] = useState(null); // 上車站 {id,name}
-  const [boardEtas, setBoardEtas] = useState(null); // 上車站 ETA
-  const [alightStop, setAlightStop] = useState(null); // 下車站 {id,name}
-  const [alightEtas, setAlightEtas] = useState(null); // 下車站 ETA
+  const [stops, setStops] = useState(null);
+  const [boardStop, setBoardStop] = useState(null);
+  const [boardEtas, setBoardEtas] = useState(null);
+  const [alightStop, setAlightStop] = useState(null);
+  const [alightEtas, setAlightEtas] = useState(null);
 
-  const [status, setStatus] = useState('loading'); // loading | ok | error
+  const [status, setStatus] = useState('loading');
   const [countdown, setCountdown] = useState(30);
   const [clock, setClock] = useState(() => new Date());
 
   const opColor = OPS.find(o => o.key === op)?.color || '#E60012';
   const clockStr = clock.toLocaleTimeString('zh-HK', { hour12: false });
 
-  // 載入站序（路線／方向／營運商改變時）
   const loadStops = useCallback(async () => {
     if (!route) return;
     setStatus('loading');
@@ -85,8 +111,7 @@ export default function BusBoardCard() {
       setStatus(list.length ? 'ok' : 'error');
       setCountdown(30);
     } catch {
-      setStops([]);
-      setStatus('error');
+      setStops([]); setStatus('error');
     }
   }, [op, route, dir]);
 
@@ -95,18 +120,15 @@ export default function BusBoardCard() {
     try {
       const d = await api.eta(op, { route, dir, stop: stop.id });
       return d.etas || [];
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   }, [op, route, dir]);
 
   useEffect(() => { loadStops(); }, [loadStops]);
 
-  // 每 30 秒重抓兩個站的 ETA；每秒倒數＋時鐘
   useEffect(() => {
     const refresh = async () => {
-      if (boardStop) { const e = await fetchEta(boardStop); setBoardEtas(e); }
-      if (alightStop) { const e = await fetchEta(alightStop); setAlightEtas(e); }
+      if (boardStop) setBoardEtas(await fetchEta(boardStop));
+      if (alightStop) setAlightEtas(await fetchEta(alightStop));
       setCountdown(30);
     };
     const t1 = setInterval(refresh, 30000);
@@ -121,23 +143,17 @@ export default function BusBoardCard() {
     if (v) setRoute(v);
   };
 
-  // 選上車站 → 抓 ETA，清空下車選擇
   const pickBoard = async (stop) => {
     setBoardStop(stop);
-    setBoardEtas(null);
-    setAlightStop(null);
-    setAlightEtas(null);
+    setBoardEtas(null); setAlightStop(null); setAlightEtas(null);
     setBoardEtas(await fetchEta(stop));
   };
-
-  // 選下車站 → 抓該站 ETA
   const pickAlight = async (stop) => {
     setAlightStop(stop);
     setAlightEtas(null);
     setAlightEtas(await fetchEta(stop));
   };
 
-  // 上車站之後的站（可選為下車站）
   const remainingStops = useMemo(() => {
     if (!stops || !boardStop) return [];
     const idx = stops.findIndex(s => s.id === boardStop.id);
@@ -145,18 +161,16 @@ export default function BusBoardCard() {
   }, [stops, boardStop]);
 
   const toRows = (etas) => (etas || [])
-    .slice()
-    .sort((a, b) => (a.mins ?? 999) - (b.mins ?? 999))
+    .slice().sort((a, b) => (a.mins ?? 999) - (b.mins ?? 999))
     .map(e => ({
       label: e.dest || (dir === 'outbound' ? '去程' : '回程'),
-      mins: e.mins,
-      remark: e.remark,
+      mins: e.mins, remark: e.remark,
       soon: (e.mins ?? 999) <= 1
     }));
 
-  const boardDest = boardEtas?.[0]?.dest
-    || stops?.[stops.length - 1]?.name?.replace(/\s*\(.*\)/, '')
-    || (dir === 'outbound' ? '去程' : '回程');
+  const rides = useMemo(() => computeRide(boardEtas, alightEtas), [boardEtas, alightEtas]);
+
+  const boardDest = boardEtas?.[0]?.dest || stops?.[stops.length - 1]?.name?.replace(/\s*\(.*\)/, '') || (dir === 'outbound' ? '去程' : '回程');
   const alightDest = alightEtas?.[0]?.dest || boardDest;
 
   return (
@@ -176,8 +190,7 @@ export default function BusBoardCard() {
         </div>
         <label className="sr-only" htmlFor="board-route">路線編號</label>
         <input id="board-route" className="map-controls__input" value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="路線，例如 968" autoComplete="off" />
+          onChange={(e) => setInput(e.target.value)} placeholder="路線，例如 968" autoComplete="off" />
         <div className="seg" role="group" aria-label="方向">
           <button type="button" className={`seg__btn ${dir === 'outbound' ? 'is-active' : ''}`} onClick={() => setDir('outbound')}>去程</button>
           <button type="button" className={`seg__btn ${dir === 'inbound' ? 'is-active' : ''}`} onClick={() => setDir('inbound')}>回程</button>
@@ -185,54 +198,34 @@ export default function BusBoardCard() {
         <button type="submit" className="map-controls__go">查看</button>
       </form>
 
-      {status === 'error' && (
-        <div className="state-msg">取不到 {route} 的站點資料，換個路線編號試試。</div>
-      )}
+      {status === 'error' && <div className="state-msg">取不到 {route} 的站點資料，換個路線編號試試。</div>}
 
       {status === 'ok' && stops && (
         <>
-          {/* 上車站選擇 */}
           <div className="board-pick">
             <label className="board-pick__label" htmlFor="board-stop">上車站</label>
-            <select
-              id="board-stop"
-              className="board-pick__select"
-              value={boardStop?.id || ''}
-              onChange={(e) => {
-                const s = stops.find(x => x.id === e.target.value);
-                if (s) pickBoard(s);
-              }}
-            >
+            <select id="board-stop" className="board-pick__select"
+              value={boardStop?.seq || ''}
+              onChange={(e) => { const s = stops.find(x => x.seq === Number(e.target.value)); if (s) pickBoard(s); }}>
               <option value="">選擇上車站…</option>
-              {stops.map(s => (
-                <option key={s.id} value={s.id}>{s.name.replace(/\s*\(.*\)/, '')}</option>
-              ))}
+              {stops.map(s => <option key={s.id} value={s.seq}>{s.name.replace(/\s*\(.*\)/, '')}</option>)}
             </select>
           </div>
 
-          {/* 上車站到站看板 */}
           {boardStop && (
-            <Board
-              route={route}
-              dest={boardDest}
-              clock={clockStr}
+            <Board route={route} dest={boardDest} clock={clockStr}
               rows={toRows(boardEtas)}
-              caption={`上車站 · ${boardStop.name.replace(/\s*\(.*\)/, '')}`}
-            />
+              caption={`上車站 · ${boardStop.name.replace(/\s*\(.*\)/, '')}`} />
           )}
 
-          {/* 下車站選擇：上車站之後的站 */}
           {boardStop && remainingStops.length > 0 && (
             <div className="board-pick">
               <div className="board-pick__label">下車站（選擇路線之後的站）</div>
               <div className="board-stops">
                 {remainingStops.map(s => (
-                  <button
-                    key={s.id}
-                    type="button"
+                  <button key={s.id} type="button"
                     className={`board-stops__btn ${alightStop?.id === s.id ? 'is-active' : ''}`}
-                    onClick={() => pickAlight(s)}
-                  >
+                    onClick={() => pickAlight(s)}>
                     {s.name.replace(/\s*\(.*\)/, '')}
                   </button>
                 ))}
@@ -240,22 +233,46 @@ export default function BusBoardCard() {
             </div>
           )}
 
-          {/* 下車站預計抵達看板 */}
           {alightStop && (
-            <Board
-              route={route}
-              dest={alightDest}
-              clock={clockStr}
-              rows={toRows(alightEtas)}
-              caption={`預計抵達 · ${alightStop.name.replace(/\s*\(.*\)/, '')}`}
-            />
+            <div className="ride-panel">
+              <div className="ride-panel__head">乘車時間與預計到達 · {alightStop.name.replace(/\s*\(.*\)/, '')}</div>
+              {rides.length === 0 ? (
+                <div className="state-msg">無法由兩站到站時間推算乘車時間（班次資料不足或方向不一致）。</div>
+              ) : (
+                <ol className="ride-list">
+                  {rides.slice(0, 3).map((r, i) => (
+                    <li className={`ride-row ${i === 0 ? 'is-next' : ''}`} key={i}>
+                      <div className="ride-row__col">
+                        <span className="ride-row__num">第 {i + 1} 班</span>
+                        <span className="ride-row__sub">上車 {etaText(r.boardMins)}</span>
+                      </div>
+                      <div className="ride-row__arrow" aria-hidden="true">→</div>
+                      <div className="ride-row__col">
+                        <span className="ride-row__eta">{etaText(r.alightMins)}</span>
+                        <span className="ride-row__sub">預計到達</span>
+                      </div>
+                      <div className="ride-row__time">
+                        <span className="ride-row__dur">{r.ride} 分</span>
+                        <span className="ride-row__sub">乘車時間</span>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <div className="ride-panel__note">乘車時間由上車站與下車站之預計到站時間相減推算；兩站各為獨立預報，差值為估算值。</div>
+            </div>
+          )}
+
+          {/* 路線地圖：跟隨本卡查詢的同一路線 */}
+          {boardStop && (
+            <RouteMap op={op} route={route} dir={dir}
+              boardSeq={boardStop?.seq} alightSeq={alightStop?.seq} />
           )}
         </>
       )}
 
       <p className="card__hint">
-        到站時間取自各營運商官方預計到站資料（ETA），每 30 秒自動更新。選擇上車站可看該站倒數，
-        再點選路線後段的車站即可預估抵達時間。
+        到站時間取自各營運商官方預計到站資料（ETA），每 30 秒自動更新。選擇上車站看倒數，再點路線後段車站即可推算乘車時間與預計到達。
       </p>
     </section>
   );

@@ -6,7 +6,6 @@ import TrafficCard from './components/TrafficCard.jsx';
 import TransportCards from './components/TransportCards.jsx';
 import RouteModal from './components/RouteModal.jsx';
 import TempHistoryCard from './components/TempHistoryCard.jsx';
-import BusMapCard from './components/BusMapCard.jsx';
 import BusBoardCard from './components/BusBoardCard.jsx';
 import MtrSchematicMap from './components/MtrSchematicMap.jsx';
 
@@ -200,7 +199,6 @@ export default function App() {
       {page === 'bus' && (
         <main id="main" className="bento bento--transit">
           <BusBoardCard />
-          <BusMapCard />
           <TransportCards
             data={transport}
             onOpen={openModal}

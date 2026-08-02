@@ -570,3 +570,41 @@ button.traffic-item--ok { border-left-color: var(--status-ok); }
   background: var(--op-color, #E60012); border-color: var(--op-color, #E60012); color: #fff;
 }
 .board-stops__btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* 乘車時間面板 */
+.ride-panel {
+  margin: 14px 16px 0; padding: 14px; border-radius: var(--radius-md);
+  background: #0C1219; border: 1px solid #232B36;
+}
+.ride-panel__head { font-size: var(--text-sm); font-weight: 700; color: #9FB3C8; margin-bottom: 10px; letter-spacing: .02em; }
+.ride-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ride-row {
+  display: grid; grid-template-columns: 1fr auto 1fr auto; align-items: center; gap: 10px;
+  padding: 12px; border-radius: 10px; background: #11161E; border: 1px solid #1C242E;
+}
+.ride-row.is-next { border-color: #16A34A; box-shadow: 0 0 0 1px #16A34A55; }
+.ride-row__col { text-align: left; }
+.ride-row__num { display: block; font-size: var(--text-sm); font-weight: 700; color: #E6EDF5; }
+.ride-row__eta { display: block; font-size: var(--text-lg); font-weight: 800; color: #FFB020; }
+.ride-row.is-next .ride-row__eta { color: #6FE3A0; }
+.ride-row__time { text-align: right; }
+.ride-row__dur { display: block; font-size: var(--text-lg); font-weight: 800; color: #E6EDF5; }
+.ride-row__sub { font-size: var(--text-xs); color: #64748B; }
+.ride-row__arrow { color: #475569; font-size: 18px; }
+.ride-panel__note { margin-top: 10px; font-size: var(--text-xs); color: #64748B; line-height: 1.5; }
+
+/* 路線地圖（看板內嵌） */
+.board-map { margin: 16px 16px 0; border-radius: var(--radius-md); overflow: hidden; border: 1px solid #232B36; }
+.board-map .map-canvas { height: 360px; width: 100%; background: var(--color-background); }
+.board-map__legend {
+  display: flex; flex-wrap: wrap; gap: var(--space-3); padding: 10px 14px;
+  background: #0C1219; border-top: 1px solid #1C242E; font-size: var(--text-xs); color: #9FB3C8;
+}
+.board-map__legend span { display: inline-flex; align-items: center; gap: 6px; }
+.board-map__legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.board-map__legend .dot--veh { width: 12px; height: 12px; border-radius: 50% 50% 50% 2px; }
+@media (max-width: 640px) {
+  .board-map .map-canvas { height: 300px; }
+  .ride-row { grid-template-columns: 1fr auto 1fr; }
+  .ride-row__time { grid-column: 1 / -1; text-align: left; }
+}

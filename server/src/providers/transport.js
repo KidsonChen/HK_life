@@ -55,9 +55,9 @@ export async function getStops(op, route, dir) {
     if (op === 'citybus') {
       const res = await j(`${CONFIG.transport.citybus.baseUrl}/route-stop/${CONFIG.transport.citybus.company}/${encodeURIComponent(route)}/${bound}/`);
       const ids = (res?.data || []).map(d => d.stop).filter(Boolean);
-      const stops = await Promise.all(ids.slice(0, 40).map(async id => {
+      const stops = await Promise.all(ids.slice(0, 40).map(async (id, i) => {
         const s = await j(`${CONFIG.transport.citybus.baseUrl}/stop/${id}`);
-        return { id, name: s?.data?.name_tc || id };
+        return { id, seq: i + 1, name: s?.data?.name_tc || id };
       }));
       return { source: 'live', stops };
     }
@@ -65,9 +65,9 @@ export async function getStops(op, route, dir) {
       // 官方 dataset：GET /route-stop/{route}/{bound}/{service_type}
       const res = await j(`${CONFIG.transport.kmb.baseUrl}/route-stop/${encodeURIComponent(route)}/${bound}/1`);
       const ids = (res?.data || []).map(d => d.stop).filter(Boolean);
-      const stops = await Promise.all(ids.slice(0, 40).map(async id => {
+      const stops = await Promise.all(ids.slice(0, 40).map(async (id, i) => {
         const s = await j(`${CONFIG.transport.kmb.baseUrl}/stop/${id}`);
-        return { id, name: s?.data?.name_tc || id };
+        return { id, seq: i + 1, name: s?.data?.name_tc || id };
       }));
       return { source: 'live', stops };
     }
