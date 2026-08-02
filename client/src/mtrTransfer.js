@@ -1,5 +1,11 @@
 // 港鐵轉車建議：以 (車站, 線路) 為狀態的最短路徑搜尋
-// 優先順序：轉車次數最少 → 經過車站數最少
+// 成本以「估計時間」計算，而非單純最少轉車 —— 少轉一次車若要多繞很多站，
+// 實際上反而更慢（例：太和→荔枝角，經九龍塘轉兩次比經金鐘轉一次快）。
+export const MIN_PER_STOP = 3;      // 每站行車時間（分）
+// 轉車成本含走行、樓梯／扶手電梯、月台候車，且旅客普遍厭惡多次轉乘，
+// 故設為 7 分（高於單純候車時間），避免演算法為省 1～2 分鐘而多轉一次車。
+export const MIN_PER_TRANSFER = 7;
+
 export function findRoute(lines, fromSta, toSta) {
   if (!fromSta || !toSta || fromSta === toSta) return null;
 
@@ -29,7 +35,7 @@ export function findRoute(lines, fromSta, toSta) {
 
   if (!linesBySta.has(fromSta) || !linesBySta.has(toSta)) return null;
 
-  // Dijkstra：cost = transfers * 1000 + stops
+  // Dijkstra：cost = 估計總時間（分）
   const dist = new Map();
   const prev = new Map();
   const pq = []; // [cost, key]
@@ -46,7 +52,7 @@ export function findRoute(lines, fromSta, toSta) {
     if (sta === toSta) continue; // 到達也可能有其他更優路徑，繼續處理但不擴展
     for (const nb of adj.get(key) || []) {
       const nk = `${nb.sta}|${nb.line}`;
-      const nc = cost + (nb.isTransfer ? 1000 : 1);
+      const nc = cost + (nb.isTransfer ? MIN_PER_TRANSFER : MIN_PER_STOP);
       if (nc < (dist.get(nk) ?? Infinity)) {
         dist.set(nk, nc);
         prev.set(nk, key);
@@ -90,7 +96,7 @@ export function findRoute(lines, fromSta, toSta) {
   return {
     transfers: cleaned.length - 1,
     totalStops,
-    est: totalStops * 3 + (cleaned.length - 1) * 5, // 粗估：每站3分鐘+每次轉車5分鐘
+    est: totalStops * MIN_PER_STOP + (cleaned.length - 1) * MIN_PER_TRANSFER,
     segments: cleaned.map(s => ({
       lineCode: s.line,
       lineName: lineMap[s.line]?.name || s.line,

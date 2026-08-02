@@ -7,11 +7,13 @@ import TransportCards from './components/TransportCards.jsx';
 import RouteModal from './components/RouteModal.jsx';
 import TempHistoryCard from './components/TempHistoryCard.jsx';
 import BusMapCard from './components/BusMapCard.jsx';
+import BusBoardCard from './components/BusBoardCard.jsx';
 import MtrSchematicMap from './components/MtrSchematicMap.jsx';
 
 const PAGES = [
   { id: 'home', label: '生活資訊' },
-  { id: 'transit', label: '巴士 · 港鐵' }
+  { id: 'bus', label: '巴士' },
+  { id: 'mtr', label: '港鐵' }
 ];
 
 function currentPage() {
@@ -93,9 +95,12 @@ export default function App() {
     await Promise.all(ops.map(async (op) => {
       try {
         const d = await api.routes(op);
-        if (op === 'mtr') return; // 港鐵首頁不顯示路線清單
         const routes = d.routes || d.lines || [];
-        setTransport((t) => ({ ...t, [op]: routes.slice(0, 6).map(r => ({ route: r.route, status: '正常運行' })) }));
+        // 巴士以 route 為識別碼，港鐵回傳的是 name（線名）
+        setTransport((t) => ({
+          ...t,
+          [op]: routes.slice(0, 6).map(r => ({ route: r.route || r.name || r.code, status: '正常運行' }))
+        }));
       } catch {
         setTransport((t) => ({ ...t, [op]: [] }));
       }
@@ -184,20 +189,36 @@ export default function App() {
         </nav>
       </header>
 
-      {page === 'home' ? (
+      {page === 'home' && (
         <main id="main" className="bento">
           <WeatherCard data={weather} error={weatherErr} loading={!weather && !weatherErr} />
           <TempHistoryCard data={tempHistory} error={tempErr} loading={!tempHistory && !tempErr} />
           <TrafficCard data={traffic} error={trafficErr} loading={!traffic && !trafficErr} />
+        </main>
+      )}
+
+      {page === 'bus' && (
+        <main id="main" className="bento bento--transit">
+          <BusBoardCard />
+          <BusMapCard />
           <TransportCards
             data={transport}
             onOpen={openModal}
+            ops={['kmb', 'citybus']}
+            title="巴士路線查詢"
           />
         </main>
-      ) : (
+      )}
+
+      {page === 'mtr' && (
         <main id="main" className="bento bento--transit">
-          <BusMapCard />
           <MtrSchematicMap />
+          <TransportCards
+            data={transport}
+            onOpen={openModal}
+            ops={['mtr']}
+            title="港鐵路線查詢"
+          />
         </main>
       )}
 

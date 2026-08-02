@@ -3,11 +3,10 @@ import { ArrowIcon, TrainIcon } from '../icons.jsx';
 
 const LINE_LABELS = { citybus: '城巴', kmb: '九巴', mtr: '港鐵' };
 
-export default function TransportCards({ data, onOpen }) {
-  const ops = ['citybus', 'kmb', 'mtr'];
+export default function TransportCards({ data, onOpen, ops = ['citybus', 'kmb', 'mtr'], title = '即時運輸資料' }) {
   return (
     <section className="card card--transport" id="transport" aria-labelledby="transport-title">
-      <div className="card__head"><h2 id="transport-title"><TrainIcon size={18} /> 即時運輸資料</h2></div>
+      <div className="card__head"><h2 id="transport-title"><TrainIcon size={18} /> {title}</h2></div>
       <div className="transport-grid">
         {ops.map((op) => {
           const items = data[op];
