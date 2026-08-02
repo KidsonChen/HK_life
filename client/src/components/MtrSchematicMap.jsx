@@ -1,33 +1,29 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { api } from '../api.js';
 import { findRoute } from '../mtrTransfer.js';
+import { SCHEMATIC, elbow } from '../mtrSchematic.js';
 
-const W = 1000, H = 700, PAD = 46;
+const CELL = 9;           // 每格像素
+const PAD = 40;
 
-// 以經緯度線性投影（香港範圍小，誤差可忽略），緯度依 cos 修正
-function project(geo) {
-  const pts = Object.values(geo);
-  if (!pts.length) return null;
-  const lats = pts.map(p => p[0]), lngs = pts.map(p => p[1]);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-  const k = Math.cos((minLat + maxLat) / 2 * Math.PI / 180);
-  const spanX = (maxLng - minLng) * k, spanY = maxLat - minLat;
-  const scale = Math.min((W - PAD * 2) / spanX, (H - PAD * 2) / spanY);
-  const offX = (W - spanX * scale) / 2, offY = (H - spanY * scale) / 2;
-  const out = {};
-  for (const [code, [lat, lng]] of Object.entries(geo)) {
-    out[code] = {
-      x: offX + (lng - minLng) * k * scale,
-      y: offY + (maxLat - lat) * scale
-    };
-  }
-  return out;
+// 由示意圖格座標算出畫布尺寸
+const xs = Object.values(SCHEMATIC).map(p => p[0]);
+const ys = Object.values(SCHEMATIC).map(p => p[1]);
+const MINX = Math.min(...xs), MAXX = Math.max(...xs);
+const MINY = Math.min(...ys), MAXY = Math.max(...ys);
+const W = (MAXX - MINX) * CELL + PAD * 2;
+const H = (MAXY - MINY) * CELL + PAD * 2;
+
+const px = (p) => [PAD + (p[0] - MINX) * CELL, PAD + (p[1] - MINY) * CELL];
+
+// 標籤朝向：依該站在圖上的位置決定文字放左還是放右，避免壓線
+function labelSide(code) {
+  const [x] = SCHEMATIC[code];
+  return x > (MINX + MAXX) / 2 ? 1 : -1;
 }
 
-export default function MtrMapCard() {
+export default function MtrSchematicMap() {
   const [lines, setLines] = useState([]);
-  const [geo, setGeo] = useState(null);
   const [sel, setSel] = useState({ from: '', to: '' });
   const { from, to } = sel;
   const [hover, setHover] = useState(null);
@@ -35,12 +31,7 @@ export default function MtrMapCard() {
   const drag = useRef(null);
   const svgRef = useRef(null);
 
-  useEffect(() => {
-    api.mtrLines().then(setLines).catch(() => setLines([]));
-    api.mtrGeo().then(setGeo).catch(() => setGeo(null));
-  }, []);
-
-  const pos = useMemo(() => (geo ? project(geo) : null), [geo]);
+  useEffect(() => { api.mtrLines().then(setLines).catch(() => setLines([])); }, []);
 
   const nameOf = useMemo(() => {
     const m = {};
@@ -48,7 +39,6 @@ export default function MtrMapCard() {
     return m;
   }, [lines]);
 
-  // 每站經過幾條線 → 判斷轉車站
   const lineCount = useMemo(() => {
     const m = {};
     lines.forEach(l => l.stations.forEach(([c]) => { m[c] = (m[c] || 0) + 1; }));
@@ -60,7 +50,6 @@ export default function MtrMapCard() {
     return findRoute(lines, from, to);
   }, [from, to, lines]);
 
-  // 路線上經過的站與路段（用於高亮）
   const routeSet = useMemo(() => {
     if (!plan) return { stations: new Set(), edges: new Set() };
     const stations = new Set(), edges = new Set();
@@ -68,25 +57,21 @@ export default function MtrMapCard() {
       const codes = seg.stationCodes || [];
       codes.forEach((c, k) => {
         stations.add(c);
-        if (k < codes.length - 1) {
-          edges.add(`${seg.lineCode}|${[c, codes[k + 1]].sort().join('-')}`);
-        }
+        if (k < codes.length - 1) edges.add(`${seg.lineCode}|${[c, codes[k + 1]].sort().join('-')}`);
       });
     });
     return { stations, edges };
   }, [plan]);
 
-  // 一次一個 state，避免同一輪 render 內連續點選讀到舊值
   const pick = (code) => {
     setSel((s) => {
-      if (!s.from) return { from: code, to: '' };        // 選出發站
-      if (s.from === code) return { from: '', to: '' };  // 再點一次＝取消
-      if (s.to) return { from: code, to: '' };           // 已完成 → 重新開始
-      return { from: s.from, to: code };                 // 選目的站
+      if (!s.from) return { from: code, to: '' };
+      if (s.from === code) return { from: '', to: '' };
+      if (s.to) return { from: code, to: '' };
+      return { from: s.from, to: code };
     });
   };
 
-  // 平移 / 縮放
   const onWheel = (e) => {
     e.preventDefault();
     const f = e.deltaY > 0 ? 1.15 : 0.87;
@@ -110,7 +95,7 @@ export default function MtrMapCard() {
   const onUp = () => { drag.current = null; };
   const reset = () => setView({ x: 0, y: 0, w: W, h: H });
 
-  const zoomed = view.w < W * 0.85;
+  const zoomed = view.w < W * 0.8;
   const showLabel = (code) =>
     code === from || code === to || code === hover ||
     routeSet.stations.has(code) || lineCount[code] > 1 || zoomed;
@@ -137,44 +122,49 @@ export default function MtrMapCard() {
       </div>
 
       <div className="mtrmap-wrap">
-        {!pos && <div className="map-overlay">載入路線圖…</div>}
-        {pos && (
+        {!lines.length && <div className="map-overlay">載入路線圖…</div>}
+        {!!lines.length && (
           <svg
             ref={svgRef}
-            className="mtrmap"
+            className="mtrmap mtrmap--schematic"
             viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
             role="img"
-            aria-label="香港港鐵路線圖，可點選車站"
+            aria-label="香港港鐵示意路線圖，可點選車站規劃路線"
             onWheel={onWheel}
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
             onPointerLeave={onUp}
           >
-            {/* 路段 */}
+            {/* 路線：每段以 elbow 拆成直線＋45°斜線 */}
             {lines.map(l => {
-              const codes = l.stations.map(s => s[0]).filter(c => pos[c]);
-              return codes.slice(0, -1).map((c, i) => {
-                const a = pos[c], b = pos[codes[i + 1]];
-                const key = `${l.code}|${[c, codes[i + 1]].sort().join('-')}`;
+              const st = l.stations.map(s => s[0]).filter(c => SCHEMATIC[c]);
+              return st.slice(0, -1).map((c, i) => {
+                const next = st[i + 1];
+                const key = `${l.code}|${[c, next].sort().join('-')}`;
                 const on = routeSet.edges.has(key);
+                const pts = elbow(SCHEMATIC[c], SCHEMATIC[next]).map(px);
                 return (
-                  <line key={key} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+                  <polyline key={key}
+                    points={pts.map(p => p.join(',')).join(' ')}
+                    fill="none"
                     stroke={l.color}
-                    strokeWidth={on ? 7 : 3.2}
-                    strokeOpacity={plan ? (on ? 1 : 0.18) : 0.85}
-                    strokeLinecap="round" />
+                    strokeWidth={on ? 9 : 5}
+                    strokeOpacity={plan ? (on ? 1 : 0.15) : 0.9}
+                    strokeLinecap="round"
+                    strokeLinejoin="round" />
                 );
               });
             })}
 
             {/* 車站 */}
-            {Object.keys(nameOf).filter(c => pos[c]).map(code => {
-              const p = pos[code];
+            {Object.keys(nameOf).filter(c => SCHEMATIC[c]).map(code => {
+              const [x, y] = px(SCHEMATIC[code]);
               const inRoute = routeSet.stations.has(code);
               const isEnd = code === from || code === to;
               const interchange = lineCount[code] > 1;
               const dim = plan && !inRoute;
+              const side = labelSide(code);
               return (
                 <g key={code} className="mtrmap__sta" data-code={code}
                   role="button" tabIndex={0}
@@ -183,20 +173,22 @@ export default function MtrMapCard() {
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(code); } }}
                   onMouseEnter={() => setHover(code)}
                   onMouseLeave={() => setHover(null)}>
-                  <circle cx={p.x} cy={p.y} r={11} fill="transparent" />
+                  <circle cx={x} cy={y} r={13} fill="transparent" />
                   <circle
-                    cx={p.x} cy={p.y}
-                    r={isEnd ? 8 : interchange ? 5.5 : 3.8}
+                    cx={x} cy={y}
+                    r={isEnd ? 9 : interchange ? 7 : 4.5}
                     fill={isEnd ? '#0F172A' : '#FFFFFF'}
                     stroke={isEnd ? '#0F172A' : '#334155'}
-                    strokeWidth={isEnd ? 3 : interchange ? 2.2 : 1.6}
-                    opacity={dim ? 0.25 : 1} />
-                  {isEnd && <circle cx={p.x} cy={p.y} r={3} fill="#fff" />}
+                    strokeWidth={isEnd ? 3 : interchange ? 2.6 : 2}
+                    opacity={dim ? 0.22 : 1} />
+                  {isEnd && <circle cx={x} cy={y} r={3.4} fill="#fff" />}
                   {showLabel(code) && (
                     <text
                       className={`mtrmap__label ${isEnd ? 'is-end' : ''}`}
-                      x={p.x + 9} y={p.y + 4}
-                      opacity={dim ? 0.25 : 1}>{nameOf[code]}</text>
+                      x={x + side * 12}
+                      y={y + 4}
+                      textAnchor={side > 0 ? 'start' : 'end'}
+                      opacity={dim ? 0.22 : 1}>{nameOf[code]}</text>
                   )}
                 </g>
               );
@@ -231,7 +223,8 @@ export default function MtrMapCard() {
       )}
 
       <p className="card__hint">
-        時間為粗估（每站約 3 分鐘、每次轉車約 5 分鐘）。站點座標來自 OpenStreetMap（ODbL），位置依實際地理繪製。滾輪縮放、拖曳平移。
+        此為<strong>示意圖</strong>，站點位置經簡化排列，不代表實際地理位置與距離。
+        時間為粗估（每站約 3 分鐘、每次轉車約 5 分鐘）。滾輪縮放、拖曳平移。
       </p>
     </section>
   );

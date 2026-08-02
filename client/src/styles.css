@@ -427,3 +427,32 @@ button.traffic-item--ok { border-left-color: var(--status-ok); }
 /* 卡片留白與邊界收斂 */
 .card { border-radius: var(--radius-lg); }
 .card__hint { line-height: 1.6; margin-top: var(--space-2); }
+
+/* ── 分頁導覽：仿月台指示牌，選中頁以香港紅底線標示 ── */
+.app-nav { display: flex; gap: 4px; margin-top: var(--space-4); position: relative; z-index: 1; }
+.app-nav__tab {
+  appearance: none; border: 0; cursor: pointer;
+  padding: 10px 18px 12px; border-radius: 10px 10px 0 0;
+  font-family: inherit; font-size: var(--text-sm); font-weight: 600; letter-spacing: .04em;
+  color: rgba(255,255,255,.62); background: rgba(255,255,255,.06);
+  border-bottom: 3px solid transparent;
+  transition: color .18s, background .18s, border-color .18s;
+}
+.app-nav__tab:hover { color: #fff; background: rgba(255,255,255,.12); }
+.app-nav__tab.is-active {
+  color: #fff; background: rgba(255,255,255,.14);
+  border-bottom-color: var(--color-hk-red);
+}
+.app-nav__tab:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* 交通頁：兩張大卡各自佔滿一列 */
+.bento--transit { display: grid; grid-template-columns: 1fr; gap: var(--space-5); }
+.bento--transit .card { grid-column: 1 / -1; }
+
+/* 示意圖：站名字級略大，因為版面已簡化、不再擁擠 */
+.mtrmap--schematic .mtrmap__label { font-size: 13px; font-weight: 600; }
+.mtrmap--schematic .mtrmap__label.is-end { font-size: 14px; font-weight: 800; }
+@media (max-width: 640px) {
+  .app-nav { margin-top: var(--space-3); }
+  .app-nav__tab { flex: 1; padding: 10px 8px 12px; font-size: var(--text-xs); }
+}

@@ -7,7 +7,17 @@ import TransportCards from './components/TransportCards.jsx';
 import RouteModal from './components/RouteModal.jsx';
 import TempHistoryCard from './components/TempHistoryCard.jsx';
 import BusMapCard from './components/BusMapCard.jsx';
-import MtrMapCard from './components/MtrMapCard.jsx';
+import MtrSchematicMap from './components/MtrSchematicMap.jsx';
+
+const PAGES = [
+  { id: 'home', label: '生活資訊' },
+  { id: 'transit', label: '巴士 · 港鐵' }
+];
+
+function currentPage() {
+  const h = window.location.hash.replace('#/', '');
+  return PAGES.some(p => p.id === h) ? h : 'home';
+}
 
 const OPERATORS = {
   citybus: { label: '城巴', color: 'var(--line-citybus)', type: 'bus' },
@@ -48,6 +58,16 @@ export default function App() {
   const [modalOp, setModalOp] = useState(null); // 當前開啟的運輸商
   const [lastFocus, setLastFocus] = useState(null);
   const toastId = useRef(0);
+  const [page, setPage] = useState(currentPage);
+
+  // hash 路由：支援上一頁／下一頁與可分享網址
+  useEffect(() => {
+    const onHash = () => setPage(currentPage());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  const goto = (id) => { window.location.hash = `#/${id}`; };
 
   const pushToast = useCallback((type, msg) => {
     const id = ++toastId.current;
@@ -150,19 +170,36 @@ export default function App() {
             <span>重新整理</span>
           </button>
         </div>
+
+        <nav className="app-nav" aria-label="主要頁面">
+          {PAGES.map(p => (
+            <button
+              key={p.id}
+              type="button"
+              className={`app-nav__tab ${page === p.id ? 'is-active' : ''}`}
+              aria-current={page === p.id ? 'page' : undefined}
+              onClick={() => goto(p.id)}
+            >{p.label}</button>
+          ))}
+        </nav>
       </header>
 
-      <main id="main" className="bento">
-        <WeatherCard data={weather} error={weatherErr} loading={!weather && !weatherErr} />
-        <TempHistoryCard data={tempHistory} error={tempErr} loading={!tempHistory && !tempErr} />
-        <TrafficCard data={traffic} error={trafficErr} loading={!traffic && !trafficErr} />
-        <BusMapCard />
-        <MtrMapCard />
-        <TransportCards
-          data={transport}
-          onOpen={openModal}
-        />
-      </main>
+      {page === 'home' ? (
+        <main id="main" className="bento">
+          <WeatherCard data={weather} error={weatherErr} loading={!weather && !weatherErr} />
+          <TempHistoryCard data={tempHistory} error={tempErr} loading={!tempHistory && !tempErr} />
+          <TrafficCard data={traffic} error={trafficErr} loading={!traffic && !trafficErr} />
+          <TransportCards
+            data={transport}
+            onOpen={openModal}
+          />
+        </main>
+      ) : (
+        <main id="main" className="bento bento--transit">
+          <BusMapCard />
+          <MtrSchematicMap />
+        </main>
+      )}
 
       <footer className="app-footer">
         <p>資料來源：香港天文台 · DATA.GOV.HK</p>
