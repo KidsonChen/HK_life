@@ -14,31 +14,53 @@ function etaText(mins) {
   return `${mins} 分鐘`;
 }
 
-// 由「上車站 ETA」與「下車站 ETA」推算乘車時間與預計到達
-// 兩站各自獨立預報，故以「同班車」假設配對：上車站第 k 班 ⇄ 下車站第 k 班。
-// 下車站比上車站更早到（= 已在車上/過站）的配對視為不合理，略過。
-function computeRide(boardEtas, alightEtas) {
-  if (!boardEtas || !alightEtas) return [];
-  const b = boardEtas.map(e => ({ mins: e.mins, dest: e.dest, remark: e.remark }))
-    .filter(x => x.mins != null)
-    .sort((a, b) => a.mins - b.mins);
-  const a = alightEtas.map(e => ({ mins: e.mins, dest: e.dest, remark: e.remark }))
-    .filter(x => x.mins != null)
-    .sort((a, b) => a.mins - b.mins);
-  const out = [];
-  for (let i = 0; i < Math.max(b.length, a.length); i++) {
-    const be = b[i]; const ae = a[i];
-    if (!be || !ae) continue;
-    const ride = ae.mins - be.mins;
-    if (ride < 0) continue; // 下車比上車更早到，不合理
-    out.push({
-      boardMins: be.mins,
-      alightMins: ae.mins,
-      ride,
-      dest: ae.dest || be.dest
-    });
+// 乘車時間推算（修正版）
+// 問題：上車站與下車站各自獨立預報，不能把兩份清單「按第 k 班配對後相減」——
+// 那樣會出現負值或 0（兩站預報各自漂移，並非同一班車）。
+// 正解：由「整條路線各站的 ETA 曲線」推導每段區間的「典型行車時間」
+// （link[i] = ETA[i] − ETA[i+1]，恒為正、穩定），再累加起點到終點的區間即得乘車時間。
+// 預計到達 = 上車站該班 ETA + 乘車時間（向前推算，而非直接取用下車站自身的 ETA）。
+function buildLinkTimes(stopsEtas) {
+  // stopsEtas: { [seq]: [mins...] }，取每站第一班（最快）ETA 畫出曲線
+  const seqs = Object.keys(stopsEtas).map(Number).sort((a, b) => a - b);
+  const first = seqs.map(s => {
+    const arr = stopsEtas[s];
+    if (!arr || !arr.length) return null;
+    return arr.map(e => e.mins).sort((a, b) => a - b)[0];
+  });
+  const links = [];
+  for (let i = 0; i < first.length - 1; i++) {
+    if (first[i] == null || first[i + 1] == null) { links.push(null); continue; }
+    const d = first[i] - first[i + 1];
+    // 區間時間應為正；若資料偶發使差值 ≤0，則退而求其次視為 1 分（避免除錯）
+    links.push(d > 0 ? d : 1);
   }
-  return out;
+  return links; // links[i] = 由 seqs[i] 到 seqs[i+1] 的行車分鐘
+}
+
+function computeRide(boardSeq, alightSeq, boardEtas, linkTimes, seqs) {
+  if (boardSeq == null || alightSeq == null || !boardEtas || !boardEtas.length) return [];
+  const bi = seqs.indexOf(Number(boardSeq));
+  const ai = seqs.indexOf(Number(alightSeq));
+  if (bi < 0 || ai < 0 || ai <= bi) return [];
+  // 累加乘車區間
+  let ride = 0;
+  for (let i = bi; i < ai; i++) {
+    const lt = linkTimes[i];
+    if (lt == null) return []; // 缺區間資料則無法推算
+    ride += lt;
+  }
+  // 依上車站各班的 ETA 向前推算預計到達
+  return boardEtas
+    .map(e => ({ mins: e.mins, dest: e.dest, remark: e.remark }))
+    .filter(x => x.mins != null)
+    .sort((a, b) => a.mins - b.mins)
+    .map(e => ({
+      boardMins: e.mins,
+      alightMins: e.mins + ride,
+      ride,
+      dest: e.dest
+    }));
 }
 
 function Board({ route, dest, clock, rows, caption }) {
@@ -91,6 +113,8 @@ export default function BusBoardCard() {
   const [boardEtas, setBoardEtas] = useState(null);
   const [alightStop, setAlightStop] = useState(null);
   const [alightEtas, setAlightEtas] = useState(null);
+  const [linkTimes, setLinkTimes] = useState(null); // 各區間典型行車分鐘（由整條路線 ETA 推導）
+  const [linkSeqs, setLinkSeqs] = useState([]);     // 與 linkTimes 對應的站序
 
   const [status, setStatus] = useState('loading');
   const [countdown, setCountdown] = useState(30);
@@ -104,12 +128,24 @@ export default function BusBoardCard() {
     setStatus('loading');
     setStops(null); setBoardStop(null); setBoardEtas(null);
     setAlightStop(null); setAlightEtas(null);
+    setLinkTimes(null); setLinkSeqs([]);
     try {
       const d = await api.stops(op, route, dir);
       const list = d.stops || [];
       setStops(list);
       setStatus(list.length ? 'ok' : 'error');
       setCountdown(30);
+      // 推導各區間典型行車時間：抓整條路線每站的 ETA 曲線
+      const seqs = list.map(s => s.seq);
+      const stopsEtas = {};
+      await Promise.all(list.map(async (s) => {
+        try {
+          const ed = await api.eta(op, { route, dir, stop: s.id });
+          stopsEtas[s.seq] = ed.etas || [];
+        } catch { stopsEtas[s.seq] = []; }
+      }));
+      setLinkSeqs(seqs);
+      setLinkTimes(buildLinkTimes(stopsEtas));
     } catch {
       setStops([]); setStatus('error');
     }
@@ -168,7 +204,7 @@ export default function BusBoardCard() {
       soon: (e.mins ?? 999) <= 1
     }));
 
-  const rides = useMemo(() => computeRide(boardEtas, alightEtas), [boardEtas, alightEtas]);
+  const rides = useMemo(() => computeRide(boardStop?.seq, alightStop?.seq, boardEtas, linkTimes, linkSeqs), [boardStop, alightStop, boardEtas, linkTimes, linkSeqs]);
 
   const boardDest = boardEtas?.[0]?.dest || stops?.[stops.length - 1]?.name?.replace(/\s*\(.*\)/, '') || (dir === 'outbound' ? '去程' : '回程');
   const alightDest = alightEtas?.[0]?.dest || boardDest;
@@ -259,7 +295,7 @@ export default function BusBoardCard() {
                   ))}
                 </ol>
               )}
-              <div className="ride-panel__note">乘車時間由上車站與下車站之預計到站時間相減推算；兩站各為獨立預報，差值為估算值。</div>
+              <div className="ride-panel__note">乘車時間由整條路線各站的預計到站時間曲線推導（每區間行車分鐘累加），預計到達為上車站該班 ETA 加乘車時間。兩者皆為官方 ETA 推算值。</div>
             </div>
           )}
 

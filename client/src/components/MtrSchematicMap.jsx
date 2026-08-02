@@ -73,6 +73,9 @@ export default function MtrSchematicMap() {
   };
 
   const onWheel = (e) => {
+    // 僅處理滑鼠滾輪的縮放；觸控雙指縮放（ctrlKey=true）交給瀏覽器原生處理，
+    // 否則 onWheel 的 preventDefault 會擋掉手機上的 pinch-zoom。
+    if (e.ctrlKey) return;
     e.preventDefault();
     const f = e.deltaY > 0 ? 1.15 : 0.87;
     setView(v => {

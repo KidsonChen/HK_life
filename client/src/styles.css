@@ -393,7 +393,7 @@ button.traffic-item--ok { border-left-color: var(--status-ok); }
 .pick__reset { flex: none; padding: 0 16px; border: 1px solid var(--color-border); border-radius: var(--radius); background: transparent; color: var(--color-muted); font-family: inherit; font-size: var(--text-sm); font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .pick__reset:hover { color: var(--color-primary); border-color: var(--color-primary); }
 .mtrmap-wrap { position: relative; border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; background: var(--color-background); }
-.mtrmap { display: block; width: 100%; height: auto; touch-action: none; cursor: grab; }
+.mtrmap { display: block; width: 100%; height: auto; touch-action: pan-x pan-y; cursor: grab; }
 .mtrmap:active { cursor: grabbing; }
 .mtrmap__sta { cursor: pointer; }
 .mtrmap__label { font-family: var(--font-sans); font-size: 11px; font-weight: 600; fill: var(--color-foreground); pointer-events: none; paint-order: stroke; stroke: var(--color-background); stroke-width: 3px; stroke-linejoin: round; }
